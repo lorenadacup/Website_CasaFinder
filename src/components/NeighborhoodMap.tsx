@@ -457,51 +457,75 @@ export default function NeighborhoodMap({
       return;
     }
     setIsLocatingUser(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const uLat = position.coords.latitude;
-        const uLng = position.coords.longitude;
-        const acc = position.coords.accuracy || 25;
+    
+    let watchId: number | null = null;
+    const ACCURACY_THRESHOLD = 15; // Stop watching once accuracy is better than 15 meters
+    let bestPosition: { lat: number; lng: number; accuracy: number } | null = null;
 
-        setUserExactGps({ lat: uLat, lng: uLng, accuracy: acc });
-        setIsLocatingUser(false);
+    const updateMap = (position: any) => {
+      const uLat = position.coords.latitude;
+      const uLng = position.coords.longitude;
+      const acc = position.coords.accuracy || 25;
 
-        if (leafletMapRef.current) {
-          const map = leafletMapRef.current;
+      bestPosition = { lat: uLat, lng: uLng, accuracy: acc };
+      setUserExactGps(bestPosition);
 
-          const userIcon = L.divIcon({
-            className: "user-gps-exact-pin",
-            html: `
-              <div class="relative flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" width="32" height="40" class="drop-shadow-lg">
-                  <path d="M12 0C7.03 0 3 4.03 3 9c0 5.25 9 15 9 15s9-9.75 9-15c0-4.97-4.03-9-9-9zm0 12c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
-                </svg>
-              </div>
-            `,
-            iconSize: [32, 40],
-            iconAnchor: [16, 40],
-          });
+      if (leafletMapRef.current) {
+        const map = leafletMapRef.current;
 
-          if (userGpsMarkerRef.current) {
-            userGpsMarkerRef.current.setLatLng([uLat, uLng]);
-          } else {
-            userGpsMarkerRef.current = L.marker([uLat, uLng], { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
-          }
+        const userIcon = L.divIcon({
+          className: "user-gps-exact-pin",
+          html: `
+            <div class="relative flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" width="32" height="40" class="drop-shadow-lg">
+                <path d="M12 0C7.03 0 3 4.03 3 9c0 5.25 9 15 9 15s9-9.75 9-15c0-4.97-4.03-9-9-9zm0 12c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+              </svg>
+            </div>
+          `,
+          iconSize: [32, 40],
+          iconAnchor: [16, 40],
+        });
 
-          if (userGpsCircleRef.current) {
-            userGpsCircleRef.current.remove();
-            userGpsCircleRef.current = null;
-          }
-
-          map.flyTo([uLat, uLng], 17, { animate: true, duration: 1.2 });
+        if (userGpsMarkerRef.current) {
+          userGpsMarkerRef.current.setLatLng([uLat, uLng]);
+        } else {
+          userGpsMarkerRef.current = L.marker([uLat, uLng], { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
         }
-      },
+
+        if (userGpsCircleRef.current) {
+          userGpsCircleRef.current.remove();
+          userGpsCircleRef.current = null;
+        }
+
+        map.flyTo([uLat, uLng], 17, { animate: true, duration: 1.2 });
+
+        // Stop watching if accuracy is good enough
+        if (acc <= ACCURACY_THRESHOLD && watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          setIsLocatingUser(false);
+        }
+      }
+    };
+
+    watchId = navigator.geolocation.watchPosition(
+      updateMap,
       () => {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+        }
         setIsLocatingUser(false);
         alert("Hindi makuha ang iyong lokasyon. Siguraduhing pinayagan ang Location Permission sa iyong browser.");
       },
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
+
+    // Safety timeout: stop watching after 45 seconds even if accuracy not perfect
+    setTimeout(() => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        setIsLocatingUser(false);
+      }
+    }, 45000);
   };
 
   const searchResults = createSearchLocations(properties).filter(item =>
