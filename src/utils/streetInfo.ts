@@ -26,9 +26,9 @@ export const getStreetInfoForCoordinates = (lat: number, lng: number) => {
     barangay = "Barangay Mabini (Town Center)";
   }
 
-  // Calculate distance to SLSU Tabing Dagat (13.9230, 122.1014) — canonical coordinate, matches mapConstants & schoolDistances
-  const dLatTD = (lat - 13.9230) * 111000;
-  const dLngTD = (lng - 122.1014) * 111000 * Math.cos(13.9230 * Math.PI / 180);
+  // Calculate distance to SLSU Tabing Dagat (13.9231, 122.1011) — canonical coordinate, matches mapConstants & schoolDistances
+  const dLatTD = (lat - 13.9231) * 111000;
+  const dLngTD = (lng - 122.1011) * 111000 * Math.cos(13.9231 * Math.PI / 180);
   const distTabingDagat = Math.round(Math.sqrt(dLatTD * dLatTD + dLngTD * dLngTD));
   const walkTabingDagat = Math.max(1, Math.round(distTabingDagat / 75));
 

@@ -199,6 +199,9 @@ export default function MapMarkers({
     }
     routeLayerRef.current = L.layerGroup().addTo(map);
 
+    // Cancellation flag — set to true in cleanup so async OSRM results don't draw after re-render
+    const cancelled = { value: false };
+
     const rawSchoolId = (activeSchoolRouteFilter && activeSchoolRouteFilter !== "none" && activeSchoolRouteFilter !== "all")
       ? activeSchoolRouteFilter
       : (selectedSchoolId && selectedSchoolId !== "none" && selectedSchoolId !== "all")
@@ -284,53 +287,123 @@ export default function MapMarkers({
             ? [hoveredProperty]
             : properties.filter(p => p.id === activeSchoolRouteFilter || activeSchoolRouteFilter === "all");
 
-        targetProperties.forEach(property => {
-          const [propLat, propLng] = getLatLngForProperty(property);
+        // Fit map bounds once for all target properties (before async routes load)
+        if (targetProperties.length > 0) {
+          const firstProp = targetProperties[0];
+          const [fp0, fp1] = getLatLngForProperty(firstProp);
+          const bounds = L.latLngBounds([fp0, fp1], [destLat, destLng]);
+          targetProperties.slice(1).forEach(p => {
+            const [la, lo] = getLatLngForProperty(p);
+            bounds.extend([la, lo]);
+          });
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: true });
+        }
 
-          const routeLine = L.polyline([[propLat, propLng], [destLat, destLng]], {
+        // Helper: build the distance label icon
+        const buildDistanceIcon = (label: string) => L.divIcon({
+          className: "route-distance-label",
+          html: `
+            <div class="bg-indigo-600 text-white font-mono text-[10px] px-1.5 py-0.5 rounded-md border-2 border-white shadow-md whitespace-nowrap flex items-center gap-1">
+              <span class="font-black">${label}</span>
+            </div>
+          `,
+          iconSize: [72, 24],
+          iconAnchor: [36, 12]
+        });
+
+        // Helper: draw a fallback straight-line route and distance label
+        const drawFallbackRoute = (
+          propLat: number, propLng: number,
+          layer: L.LayerGroup
+        ) => {
+          layer.addLayer(L.polyline([[propLat, propLng], [destLat, destLng]], {
             color: lineStrokeColor,
             weight: 3,
-            opacity: 0.9,
+            opacity: 0.7,
             lineCap: "round",
             lineJoin: "round",
             dashArray: "8, 8",
             interactive: false
-          });
-          routeLayerRef.current?.addLayer(routeLine);
-
-          // Fit map to show both the property and the destination
-          const bounds = L.latLngBounds(
-            [propLat, propLng],
-            [destLat, destLng]
-          );
-          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: true });
-
+          }));
           const midLat = (propLat + destLat) / 2;
           const midLng = (propLng + destLng) / 2;
           const dLat = (propLat - destLat) * 111000;
           const dLng = (propLng - destLng) * 111000 * Math.cos(((propLat + destLat) / 2) * Math.PI / 180);
-          const distanceMeters = Math.round(Math.sqrt(dLat * dLat + dLng * dLng));
-          const distanceKm = (distanceMeters / 1000).toFixed(1);
+          const distanceKm = (Math.sqrt(dLat * dLat + dLng * dLng) / 1000).toFixed(1);
+          layer.addLayer(L.marker([midLat, midLng], {
+            icon: buildDistanceIcon(`~${distanceKm} km`),
+            interactive: false,
+            zIndexOffset: 5000
+          }));
+        };
 
-          const distanceIcon = L.divIcon({
-            className: "route-distance-label",
-            html: `
-              <div class="bg-indigo-600 text-white font-mono text-[10px] px-1.5 py-0.5 rounded-md border-2 border-white shadow-md whitespace-nowrap flex items-center gap-1">
-                <span class="font-black">${distanceKm} km</span>
-              </div>
-            `,
-            iconSize: [64, 24],
-            iconAnchor: [32, 12]
-          });
+        // Fetch road route from OSRM and draw it; fall back to straight line on error
+        const drawOsrmRoute = async (
+          propLat: number, propLng: number,
+          layer: L.LayerGroup,
+          cancelled: { value: boolean }
+        ) => {
+          try {
+            const url =
+              `https://router.project-osrm.org/route/v1/foot/` +
+              `${propLng},${propLat};${destLng},${destLat}` +
+              `?overview=full&geometries=geojson&steps=false`;
 
-          routeLayerRef.current?.addLayer(
-            L.marker([midLat, midLng], { icon: distanceIcon, interactive: false, zIndexOffset: 5000 })
-          );
+            const res = await fetch(url);
+            if (cancelled.value) return;
+            if (!res.ok) throw new Error("OSRM non-200");
+
+            const data = await res.json();
+            if (cancelled.value) return;
+
+            const route = data?.routes?.[0];
+            if (!route) throw new Error("No route returned");
+
+            // Road geometry — array of [lng, lat] from GeoJSON, convert to [lat, lng] for Leaflet
+            const coords: [number, number][] = route.geometry.coordinates.map(
+              ([lng, lat]: [number, number]) => [lat, lng]
+            );
+
+            layer.addLayer(L.polyline(coords, {
+              color: lineStrokeColor,
+              weight: 4,
+              opacity: 0.9,
+              lineCap: "round",
+              lineJoin: "round",
+              interactive: false
+            }));
+
+            // OSRM returns distance in metres
+            const roadKm = (route.distance / 1000).toFixed(1);
+            const walkMin = Math.round(route.duration / 60); // OSRM foot profile gives walking duration
+
+            // Place label at the midpoint coord of the route geometry
+            const midIdx = Math.floor(coords.length / 2);
+            const [midLat, midLng] = coords[midIdx] ?? [(propLat + destLat) / 2, (propLng + destLng) / 2];
+
+            layer.addLayer(L.marker([midLat, midLng], {
+              icon: buildDistanceIcon(`${roadKm} km · ${walkMin} min`),
+              interactive: false,
+              zIndexOffset: 5000
+            }));
+
+          } catch {
+            if (!cancelled.value) drawFallbackRoute(propLat, propLng, layer);
+          }
+        };
+
+        // Fetch each property's route (cancelled flag is hoisted above)
+        targetProperties.forEach(property => {
+          const [propLat, propLng] = getLatLngForProperty(property);
+          if (routeLayerRef.current) {
+            drawOsrmRoute(propLat, propLng, routeLayerRef.current, cancelled);
+          }
         });
       }
     }
 
     return () => {
+      cancelled.value = true;
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
       if (routeLayerRef.current) {

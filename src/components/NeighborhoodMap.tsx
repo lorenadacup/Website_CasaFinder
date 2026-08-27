@@ -34,10 +34,13 @@ const getLatLngForProperty = (p: Property): [number, number] => {
 // Searchable locations database in Gumaca
 const createSearchLocations = (properties: Property[]) => [
   { name: "SLSU Villa Nava 🎓", lat: 13.912125, lng: 122.104057, detail: "Brgy. Villa Nava Campus" },
-  { name: "SLSU Tabing Dagat Campus 🎓", lat: 13.9230, lng: 122.1014, detail: "Brgy. Tabing Dagat Campus" },
+  { name: "SLSU Tabing Dagat Campus 🎓", lat: 13.9231, lng: 122.1011, detail: "Brgy. Tabing Dagat Campus" },
   { name: "Eastern Quezon College (EQC) 🏛️", lat: 13.923315, lng: 122.097557, detail: "College, Gumaca" },
   { name: "Gumaca National High School (GNHS) 🏫", lat: 13.9182, lng: 122.0956, detail: "High School, Mabini/Poblacion" },
   { name: "Gumaca West & East Central Elementary ", lat: 13.918000, lng: 122.099000, detail: "Elementary School, M.H. Del Pilar St." },
+  { name: "Plaza Rizal Elementary School 🏫", lat: 13.9183, lng: 122.0986, detail: "Elementary School, Poblacion, Gumaca" },
+  { name: "Gumaca West Central School 🏫", lat: 13.9181, lng: 122.0996, detail: "Elementary School, Poblacion, Gumaca" },
+  { name: "Gumaca East Central School 🏫", lat: 13.9175, lng: 122.1002, detail: "Elementary School, Poblacion, Gumaca" },
   { name: "Holy Child Academy 🏫", lat: 13.921500, lng: 122.099500, detail: "High School / Academy, Town Proper" },
   // All 13 Gumaca Barangays with precise GPS Coordinates
   { name: "📍 Barangay Tabing Dagat", lat: 13.923258, lng: 122.101460, detail: "Coastal Quayside, Nava Blvd & SLSU Campus Area" },
@@ -700,6 +703,24 @@ export default function NeighborhoodMap({
         setClickedStreet={setClickedStreet}
       />
 
+      {/* Clear Route Button — shown when a route is active */}
+      {activeSchoolRouteFilter && activeSchoolRouteFilter !== "none" && activeSchoolRouteFilter !== "all" && (
+        <div className="absolute top-4 right-4 z-50 pointer-events-none flex justify-end">
+          <button
+            className="pointer-events-auto flex items-center gap-1.5 bg-stone-900/90 hover:bg-red-900/90 text-stone-300 hover:text-white border border-stone-700 hover:border-red-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg backdrop-blur-sm transition-all"
+            onClick={() => {
+              setActiveSchoolRouteFilter("none");
+              setDismissedSchoolId(activeSchoolRouteFilter);
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Clear Route
+          </button>
+        </div>
+      )}
+
       {/* School Editing System */}
       <SchoolEditingSystem
         map={leafletMapRef.current}
@@ -779,6 +800,24 @@ export default function NeighborhoodMap({
             className="bg-red-50 hover:bg-red-100 text-red-800 border border-red-200/80 px-2.5 py-1 rounded-lg font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1"
           >
             Jollibee
+          </button>
+          <button
+            onClick={() => triggerArrowHighlight(13.9183, 122.0986, "Plaza Rizal Elementary School 🏫", "Plaza Rizal Elementary School, Poblacion, Gumaca", 19, "plaza-rizal-elem")}
+            className="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 px-2.5 py-1 rounded-lg font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            Plaza Rizal Elem.
+          </button>
+          <button
+            onClick={() => triggerArrowHighlight(13.9181, 122.0996, "Gumaca West Central School 🏫", "Gumaca West Central School, Poblacion, Gumaca", 19, "west-central")}
+            className="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 px-2.5 py-1 rounded-lg font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            West Central
+          </button>
+          <button
+            onClick={() => triggerArrowHighlight(13.9175, 122.1002, "Gumaca East Central School 🏫", "Gumaca East Central School, Poblacion, Gumaca", 19, "east-central")}
+            className="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 px-2.5 py-1 rounded-lg font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            East Central
           </button>
         </div>
       )}

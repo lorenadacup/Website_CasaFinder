@@ -106,13 +106,12 @@ export const PostingLocationMap: React.FC<PostingLocationMapProps> = ({
     leafletMapRef.current = map;
 
     // 1. Add Tile Layer (Standard Clean Street Map)
-    const tileUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+    const tileUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
     const tileLayer = L.tileLayer(tileUrl, {
       maxZoom: 20,
       attribution,
-      subdomains: "abcd",
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 

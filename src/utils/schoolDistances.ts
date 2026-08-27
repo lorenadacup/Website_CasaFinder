@@ -91,10 +91,10 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     name: "SLSU Tabing Dagat Campus 🎓🌊",
     shortName: "SLSU Tabing Dagat",
     type: "University" as const,
-    lat: 13.9230,
-    lng: 122.1014,
-    entranceLat: 13.9230,
-    entranceLng: 122.1014,
+    lat: 13.9231,
+    lng: 122.1011,
+    entranceLat: 13.9231,
+    entranceLng: 122.1011,
     isEntranceInvisible: false,
     desc: "Southern Luzon State University - Tabing Dagat Campus"
   },
@@ -151,12 +151,48 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     name: "Philippine Institute of Arts and Technology (PIAT) 🎨🎓",
     shortName: "PIAT College",
     type: "College" as const,
-    lat: 13.921300,
-    lng: 122.098200,
-    entranceLat: 13.921300,
-    entranceLng: 122.098200,
+    lat: 13.9180,
+    lng: 122.1003,
+    entranceLat: 13.9180,
+    entranceLng: 122.1003,
     isEntranceInvisible: false,
     desc: "Philippine Institute of Arts and Technology, Gumaca"
+  },
+  {
+    id: "plaza-rizal-elem",
+    name: "Plaza Rizal Elementary School 🏫",
+    shortName: "Plaza Rizal Elem.",
+    type: "Elementary" as const,
+    lat: 13.9183,
+    lng: 122.0986,
+    entranceLat: 13.9183,
+    entranceLng: 122.0986,
+    isEntranceInvisible: false,
+    desc: "Plaza Rizal Elementary School, Poblacion, Gumaca"
+  },
+  {
+    id: "gumaca-west-central",
+    name: "Gumaca West Central School 🏫",
+    shortName: "West Central",
+    type: "Elementary" as const,
+    lat: 13.9181,
+    lng: 122.0996,
+    entranceLat: 13.9181,
+    entranceLng: 122.0996,
+    isEntranceInvisible: false,
+    desc: "Gumaca West Central School, Poblacion, Gumaca"
+  },
+  {
+    id: "gumaca-east-central",
+    name: "Gumaca East Central School 🏫",
+    shortName: "East Central",
+    type: "Elementary" as const,
+    lat: 13.9175,
+    lng: 122.1002,
+    entranceLat: 13.9175,
+    entranceLng: 122.1002,
+    isEntranceInvisible: false,
+    desc: "Gumaca East Central School, Poblacion, Gumaca"
   },
 ];
 
@@ -345,7 +381,7 @@ export function parsePropertyLatLng(coords: any, neighborhood?: string, property
   // Fallback by neighborhood if coordinates are unavailable or invalid
   const n = (neighborhood || "").toLowerCase();
   if (n.includes("villa nava")) return [13.912125, 122.104057];
-  if (n.includes("tabing dagat")) return [13.9230, 122.1014];
+  if (n.includes("tabing dagat")) return [13.9231, 122.1011];
   if (n.includes("peñafrancia") || n.includes("penafrancia")) return [13.924800, 122.095500];
   if (n.includes("pipisik")) return [13.925200, 122.097500];
   if (n.includes("san diego")) return [13.920200, 122.103800];
@@ -359,7 +395,7 @@ export function parsePropertyLatLng(coords: any, neighborhood?: string, property
   if (n.includes("rosario")) return [13.924000, 122.099000];
 
   // Default Gumaca Poblacion center
-  return [13.9230, 122.1014];
+  return [13.9231, 122.1011];
 }
 
 /**

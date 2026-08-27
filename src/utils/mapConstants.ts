@@ -19,10 +19,13 @@ export const GUMACA_LANDMARKS = [
 
   // Key Landmarks
   { name: "SLSU Villa Nava 🎓", lat: 13.912125, lng: 122.104057, type: "University", desc: "Campus - Brgy. Villa Nava" },
-  { name: "SLSU Tabing Dagat 🎓🌊", lat: 13.9230, lng: 122.1014, type: "University", desc: "Campus - Brgy. Tabing Dagat" },
+  { name: "SLSU Tabing Dagat 🎓🌊", lat: 13.9231, lng: 122.1011, type: "University", desc: "Campus - Brgy. Tabing Dagat" },
   { name: "Eastern Quezon College (EQC) 🏛️", lat: 13.923315, lng: 122.097557, type: "College", desc: "College, Gumaca" },
   { name: "Gumaca National High School (GNHS) 🏫", lat: 13.9182, lng: 122.0956, type: "High School", desc: "Gumaca NHS, Mabini/Poblacion" },
   { name: "Gumaca West & East Central Schools 🏫", lat: 13.918000, lng: 122.099000, type: "School", desc: "M.H. Del Pilar St. / Capisonda St." },
+  { name: "Plaza Rizal Elementary School 🏫", lat: 13.9183, lng: 122.0986, type: "School", desc: "Plaza Rizal Elementary School, Poblacion, Gumaca" },
+  { name: "Gumaca West Central School 🏫", lat: 13.9181, lng: 122.0996, type: "School", desc: "Gumaca West Central School, Poblacion, Gumaca" },
+  { name: "Gumaca East Central School 🏫", lat: 13.9175, lng: 122.1002, type: "School", desc: "Gumaca East Central School, Poblacion, Gumaca" },
   { name: "Holy Child Academy / Sacred Heart 🏫", lat: 13.921500, lng: 122.099500, type: "High School", desc: "Holy Child Academy, Town Proper" },
   { name: "San Diego de Alcala Cathedral ⛪", lat: 13.921587, lng: 122.099428, type: "Church", desc: "Historic Parish Church, Town Proper" },
   { name: "Kutang San Diego 🏰", lat: 13.9238, lng: 122.0975, type: "Heritage", desc: "Historical Fort, Brgy. Tabing Dagat" },
@@ -47,11 +50,11 @@ export const ARROW_STORAGE_KEY = "casafinder_arrow_markers_v1";
 
 export const DEFAULT_ARROW_MARKERS = {
   "slsu-villa-nava":   { _v: 1, lat: 13.912125, lng: 122.104057, title: "SLSU Villa Nava 🎓", desc: "Southern Luzon State University - Villa Nava Campus" },
-  "slsu-tabing-dagat": { _v: 2, lat: 13.9230,   lng: 122.1014,   title: "SLSU Tabing Dagat Campus 🎓", desc: "Southern Luzon State University - Tabing Dagat Campus" },
+  "slsu-tabing-dagat": { _v: 2, lat: 13.9231,   lng: 122.1011,   title: "SLSU Tabing Dagat Campus 🎓", desc: "Southern Luzon State University - Tabing Dagat Campus" },
   "eqc":               { _v: 1, lat: 13.923315, lng: 122.097557, title: "Eastern Quezon College (EQC) 🏛️", desc: "College & Educational Institution, Gumaca" },
   "gnhs":              { _v: 2, lat: 13.9182, lng: 122.0956, title: "Gumaca National High School (GNHS) 🏫", desc: "Gumaca NHS, Mabini/Poblacion, Gumaca" },
   "holy-child":        { _v: 1, lat: 13.921889, lng: 122.099639, title: "Holy Child Jesus College 🏫", desc: "Holy Child Jesus College / Academy, Town Proper, Gumaca" },
-  "piat":              { _v: 1, lat: 13.921300, lng: 122.098200, title: "PIAT College 🎨🎓", desc: "Philippine Institute of Arts and Technology, Gumaca" },
+  "piat":              { _v: 1, lat: 13.9180, lng: 122.1003, title: "PIAT College 🎨🎓", desc: "Philippine Institute of Arts and Technology, Gumaca" },
   "jollibee":          { _v: 1, lat: 13.920523, lng: 122.099064, title: "Jollibee Gumaca 🍔🐝", desc: "Fast Food Restaurant, Maharlika Highway, Gumaca" },
   "mcdonalds":         { _v: 1, lat: 13.920751, lng: 122.100299, title: "McDonald's Gumaca 🍟🍔", desc: "Fast Food Restaurant, Maharlika Highway, Gumaca" },
   "chowking":          { _v: 1, lat: 13.920489, lng: 122.098769, title: "Chowking Gumaca 🥢🥟", desc: "Fast Food Restaurant, Maharlika Highway, Gumaca" },
@@ -64,6 +67,9 @@ export const DEFAULT_ARROW_MARKERS = {
   "rakk-prophet":      { _v: 1, lat: 13.932183, lng: 122.091994, title: "RAKKK Prophet Medical Center 🏥", desc: "Hospital / Medical Center, Km. 194 Maharlika Highway, Brgy. Rosario, Gumaca" },
   "district-hospital": { _v: 1, lat: 13.933120, lng: 122.089487, title: "Gumaca District Hospital 🏥", desc: "Gumaca District Hospital, Maharlika Highway, Brgy. Rosario, Gumaca" },
   "convention-center": { _v: 2, lat: 13.9236, lng: 122.1020, title: "Southern Luzon Convention Center 🏛️", desc: "Convention & Events Center, Tabing Dagat Area, Gumaca" },
+  "plaza-rizal-elem":  { _v: 1, lat: 13.9183, lng: 122.0986, title: "Plaza Rizal Elementary School 🏫", desc: "Plaza Rizal Elementary School, Poblacion, Gumaca" },
+  "west-central":      { _v: 1, lat: 13.9181, lng: 122.0996, title: "Gumaca West Central School 🏫", desc: "Gumaca West Central School, Poblacion, Gumaca" },
+  "east-central":      { _v: 1, lat: 13.9175, lng: 122.1002, title: "Gumaca East Central School 🏫", desc: "Gumaca East Central School, Poblacion, Gumaca" },
 };
 
 // Map tile configurations
