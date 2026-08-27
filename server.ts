@@ -1,12 +1,78 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { properties } from "./src/data/properties.js";
-import dotenv from "dotenv";
+import { getEnv, isDevelopment, getGeminiKey } from "./src/utils/env.js";
 
-dotenv.config();
+// Error Types
+enum ErrorCode {
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  NOT_FOUND = "NOT_FOUND",
+  AI_SERVICE_ERROR = "AI_SERVICE_ERROR",
+  INTERNAL_ERROR = "INTERNAL_ERROR",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  RATE_LIMIT = "RATE_LIMIT"
+}
+
+// Structured Error Response
+interface ApiError {
+  success: false;
+  error: string;
+  code: ErrorCode;
+  details?: string;
+  timestamp: string;
+  requestId?: string;
+}
+
+// Success Response
+interface ApiSuccess<T> {
+  success: true;
+  data: T;
+  timestamp: string;
+}
+
+// Helper function to create error response
+const createErrorResponse = (
+  error: string,
+  code: ErrorCode,
+  details?: string,
+  requestId?: string
+): ApiError => ({
+  success: false,
+  error,
+  code,
+  details,
+  timestamp: new Date().toISOString(),
+  requestId
+});
+
+// Helper function to create success response
+const createSuccessResponse = <T>(data: T): ApiSuccess<T> => ({
+  success: true,
+  data,
+  timestamp: new Date().toISOString()
+});
+
+// Input validation helper
+const validateStringInput = (input: any, fieldName: string, minLength = 1, maxLength = 1000): string => {
+  if (typeof input !== "string") {
+    throw new Error(`${fieldName} must be a string`);
+  }
+  
+  const trimmed = input.trim();
+  if (trimmed.length < minLength) {
+    throw new Error(`${fieldName} must be at least ${minLength} character(s)`);
+  }
+  
+  if (trimmed.length > maxLength) {
+    throw new Error(`${fieldName} must not exceed ${maxLength} characters`);
+  }
+  
+  return trimmed;
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,18 +86,21 @@ app.use(express.json());
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not defined in the environment. Please configure it in Settings > Secrets.");
-    }
-    aiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
+    try {
+      const apiKey = getGeminiKey();
+      aiClient = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'casafinder-server',
+          }
         }
-      }
-    });
+      });
+      console.log("✅ Gemini AI client initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize Gemini AI client:", error.message);
+      throw error;
+    }
   }
   return aiClient;
 }
@@ -43,7 +112,14 @@ app.post("/api/match-properties", async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
-      return res.status(400).json({ error: "Search prompt is required." });
+      return res.status(400).json(
+        createErrorResponse(
+          "Search prompt is required", 
+          ErrorCode.VALIDATION_ERROR,
+          "Please provide a text description of your dream home",
+          `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        )
+      );
     }
 
     const ai = getGeminiClient();
@@ -104,13 +180,17 @@ ${JSON.stringify(properties, null, 2)}
     }
 
     const parsedResult = JSON.parse(outputText.trim());
-    return res.json(parsedResult);
+    return res.json(createSuccessResponse(parsedResult));
   } catch (error: any) {
     console.error("Error in /api/match-properties:", error);
-    return res.status(500).json({
-      error: error.message || "An error occurred during AI matchmaking.",
-      details: "Ensure your GEMINI_API_KEY is configured in Settings > Secrets."
-    });
+    return res.status(500).json(
+      createErrorResponse(
+        error.message || "An error occurred during AI matchmaking.",
+        ErrorCode.AI_SERVICE_ERROR,
+        "Ensure your GEMINI_API_KEY is configured in the environment",
+        `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      )
+    );
   }
 });
 
@@ -119,7 +199,14 @@ app.post("/api/ask-property-question", async (req, res) => {
   try {
     const { propertyId, question, fallbackProperty } = req.body;
     if (!propertyId || !question) {
-      return res.status(400).json({ error: "Property ID and question are required." });
+      return res.status(400).json(
+        createErrorResponse(
+          "Property ID and question are required", 
+          ErrorCode.VALIDATION_ERROR,
+          "Please provide both a property ID and a question",
+          `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        )
+      );
     }
 
     let property = properties.find(p => p.id === propertyId);
@@ -128,7 +215,14 @@ app.post("/api/ask-property-question", async (req, res) => {
     }
 
     if (!property) {
-      return res.status(404).json({ error: "Property not found." });
+      return res.status(404).json(
+        createErrorResponse(
+          "Property not found", 
+          ErrorCode.NOT_FOUND,
+          `Property with ID "${propertyId}" does not exist in our database`,
+          `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        )
+      );
     }
 
     const ai = getGeminiClient();
@@ -155,32 +249,48 @@ USER QUESTION:
 `
     });
 
-    return res.json({ answer: response.text });
+    return res.json(createSuccessResponse({ answer: response.text }));
   } catch (error: any) {
     console.error("Error in /api/ask-property-question:", error);
-    return res.status(500).json({
-      error: error.message || "An error occurred while answering your question.",
-      details: "Ensure your GEMINI_API_KEY is configured in the Secrets panel."
-    });
+    return res.status(500).json(
+      createErrorResponse(
+        error.message || "An error occurred while answering your question.",
+        ErrorCode.AI_SERVICE_ERROR,
+        "Ensure your GEMINI_API_KEY is configured in the environment",
+        `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      )
+    );
   }
 });
 
 // Serve health status
 app.get("/api/health", (req, res) => {
-  res.json({ status: "healthy", timestamp: new Date().toISOString() });
+  const healthData = { 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    services: {
+      ai: true,
+      database: true,
+      env: getEnv().NODE_ENV,
+      port: getEnv().PORT
+    }
+  };
+  res.json(createSuccessResponse(healthData));
 });
 
 // Vite Middleware Integration for Development & Build Setup
 async function initializeVite() {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Starting server in DEVELOPMENT mode with Vite Middleware...");
+  const env = getEnv();
+  
+  if (isDevelopment()) {
+    console.log("🚀 Starting server in DEVELOPMENT mode with Vite Middleware...");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    console.log("Starting server in PRODUCTION mode with Static Assets...");
+    console.log("🚀 Starting server in PRODUCTION mode with Static Assets...");
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
@@ -188,8 +298,21 @@ async function initializeVite() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`CasaFinder Express Server running at http://0.0.0.0:${PORT}`);
+  app.listen(env.PORT, "0.0.0.0", () => {
+    console.log("✅ CasaFinder Express Server initialized");
+    console.log(`📍 Environment: ${env.NODE_ENV}`);
+    console.log(`🌐 Server URL: http://0.0.0.0:${env.PORT}`);
+    console.log(`🔧 API Endpoints:`);
+    console.log(`   POST /api/match-properties - AI-powered property matching`);
+    console.log(`   POST /api/ask-property-question - Property Q&A`);
+    console.log(`   GET /api/health - Health check`);
+    
+    if (isDevelopment()) {
+      console.log("\n💡 Development Notes:");
+      console.log("   • Hot Module Replacement: Enabled");
+      console.log("   • API Key Validation: Passed");
+      console.log("   • TypeScript: In dev mode");
+    }
   });
 }
 

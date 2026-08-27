@@ -10,6 +10,7 @@ import LandlordProfileModal from "./components/LandlordProfileModal";
 import AboutModal from "./components/AboutModal";
 import NeighborhoodMap from "./components/NeighborhoodMap";
 import { PostingLocationMap, getNeighborhoodDefaultLatLng } from "./components/PostingLocationMap";
+import LoadingSpinner, { LoadingOverlay, CardSkeleton } from "./components/LoadingSpinner";
 import { getTranslation, Language } from "./utils/translations";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -1580,57 +1581,105 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center p-6 text-stone-900 antialiased relative overflow-hidden">
-        {/* Soft Ambient Background Decor */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] to-indigo-50 dark:from-stone-900 dark:to-stone-800 flex flex-col items-center justify-center p-6 text-stone-900 dark:text-stone-100 antialiased relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/30 via-transparent to-pink-100/30 dark:from-indigo-900/10 dark:via-transparent dark:to-pink-900/10" />
+        
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="max-w-xs w-full text-center space-y-7 z-10"
+          className="max-w-md w-full text-center space-y-8 z-10"
         >
-          {/* CasaFinder Logo & Spinning Rings */}
+          {/* Enhanced logo with loading spinner */}
           <div className="relative flex justify-center">
-            <div className="relative h-44 w-44 flex items-center justify-center">
-              {/* Outer dashed spinning ring */}
+            <div className="relative h-48 w-48 flex items-center justify-center">
+              {/* Outer animated ring */}
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 border-2 border-dashed border-indigo-200 rounded-full"
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 border-4 border-transparent border-t-indigo-400/50 border-r-pink-400/30 border-b-indigo-400/30 border-l-pink-400/50 rounded-full"
               />
-              {/* Inner solid spinning gradient ring */}
-              <motion.div
-                animate={{ rotate: -360 }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-1.5 border-t-2 border-indigo-600 rounded-full"
-              />
-              {/* Logo Core */}
-              <div className="relative h-32 w-32 rounded-3xl overflow-hidden shadow-xl shadow-indigo-100">
-                <img src="/casafinder-logo.png" alt="CasaFinder" className="w-full h-full object-cover" />
+              
+              {/* Logo container */}
+              <div className="relative h-36 w-36 rounded-3xl overflow-hidden shadow-2xl shadow-indigo-200/50 dark:shadow-indigo-900/30 bg-white dark:bg-stone-800 p-2">
+                <img 
+                  src="/casafinder-logo.png" 
+                  alt="CasaFinder" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=400&q=80";
+                  }}
+                />
+              </div>
+              
+              {/* Loading spinner in corner */}
+              <div className="absolute -top-2 -right-2">
+                <LoadingSpinner size="lg" variant="primary" />
               </div>
             </div>
           </div>
 
-          {/* Loading content */}
-          <div className="flex flex-col items-center gap-8 w-full max-w-sm px-6">
-            {/* Title & Subtitle */}
+          {/* Enhanced loading content */}
+          <div className="flex flex-col items-center gap-6">
+            {/* Title */}
             <div className="text-center space-y-2">
-              <h1 className="text-4xl font-display font-bold text-stone-900 dark:text-white">
+              <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent">
                 CasaFinder
               </h1>
-              <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">
-                Your Partner in finding your Home
+              <p className="text-sm font-medium text-stone-600 dark:text-stone-300 uppercase tracking-wider">
+                Smart Home-Finding Platform
               </p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-              <motion.div
-                style={{ width: `${loadingProgress}%` }}
-                className="h-full bg-indigo-500 rounded-full transition-all duration-300"
-              />
+            {/* Progress indicator */}
+            <div className="w-full max-w-xs space-y-3">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-stone-600 dark:text-stone-300">
+                  {loadingProgress < 30 ? "Loading core system..." :
+                   loadingProgress < 60 ? "Preparing database..." :
+                   loadingProgress < 85 ? "Initializing features..." :
+                   "Finalizing setup..."}
+                </span>
+                <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  {loadingProgress}%
+                </span>
+              </div>
+              
+              {/* Enhanced progress bar */}
+              <div className="w-full h-2.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden shadow-inner">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${loadingProgress}%` }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 rounded-full relative"
+                >
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                    animate={{ x: ['0%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  />
+                </motion.div>
+              </div>
             </div>
+
+            {/* Loading status */}
+            <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 rounded-full px-4 py-2">
+              <LoadingSpinner size="sm" variant="primary" />
+              <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                {loadingProgress < 40 ? "Loading Gumaca property data..." :
+                 loadingProgress < 70 ? "Preparing interactive maps..." :
+                 loadingProgress < 90 ? "Setting up AI features..." :
+                 "Almost ready! 🎉"}
+              </p>
+            </div>
+            
+            {/* Version info */}
+            <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono">
+              CasaFinder v1.0 • {new Date().getFullYear()}
+            </p>
           </div>
         </motion.div>
       </div>
