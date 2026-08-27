@@ -3,6 +3,7 @@ import L from "leaflet";
 import { Property } from "../data/properties";
 import { AiMatch } from "../types";
 import { getGumacaSchools } from "../utils/schoolDistances";
+import { DEFAULT_ARROW_MARKERS } from "../utils/mapConstants";
 
 interface MapMarkersProps {
   map: L.Map | null;
@@ -212,6 +213,8 @@ export default function MapMarkers({
 
     if (targetSchoolId) {
       const activeSchools = getGumacaSchools();
+
+      // First try matching a school
       const selectedSchoolObj = activeSchools.find(s =>
         s.id === targetSchoolId ||
         s.id.includes(targetSchoolId) ||
@@ -219,57 +222,72 @@ export default function MapMarkers({
         s.name.toLowerCase().includes(targetSchoolId.toLowerCase())
       );
 
-      if (selectedSchoolObj) {
-        const lineStrokeColor = "#2563eb"; // Vibrant Blue Route Line as requested
+      // Fall back to DEFAULT_ARROW_MARKERS for non-school destinations
+      const arrowEntry = !selectedSchoolObj
+        ? DEFAULT_ARROW_MARKERS[targetSchoolId as keyof typeof DEFAULT_ARROW_MARKERS]
+        : null;
 
-        // 1. Add Prominent School Bouncing Arrow Pinpoint Marker
-        const schoolIcon = L.divIcon({
-          className: "custom-selected-school-arrow-pin !bg-transparent !border-none",
-          html: `
+      const destLat = selectedSchoolObj?.lat ?? arrowEntry?.lat ?? null;
+      const destLng = selectedSchoolObj?.lng ?? arrowEntry?.lng ?? null;
+      const destName = selectedSchoolObj?.name ?? arrowEntry?.title ?? targetSchoolId;
+      const isSchool = !!selectedSchoolObj;
+
+      if (destLat !== null && destLng !== null) {
+        const lineStrokeColor = "#2563eb";
+
+        // Destination pin — school style for schools, map-pin style for other destinations
+        const destIcon = L.divIcon({
+          className: "custom-selected-dest-pin !bg-transparent !border-none",
+          html: isSchool ? `
             <div class="cursor-pointer group flex flex-col items-center z-50 transition-transform hover:scale-110 active:scale-95">
-              <!-- Distinct SVG School Pinhead Badge with Pulsing Ring -->
               <div class="relative flex items-center justify-center">
-                <!-- Pulsing Outer Ring -->
                 <div class="absolute -inset-2 bg-indigo-500/50 rounded-full animate-ping"></div>
-                
-                <!-- Circle SVG Pin Container -->
                 <div class="relative w-11 h-11 bg-gradient-to-br from-indigo-800 via-indigo-900 to-slate-950 text-amber-300 rounded-full border-2 border-amber-400 shadow-2xl flex items-center justify-center p-2">
-                  <!-- Graduation Cap SVG Icon -->
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-300 drop-shadow-md animate-bounce" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M11.7 2.21a1.25 1.25 0 0 1 1.6 0l9.25 7.4a1.25 1.25 0 0 1-.22 2.05l-2.08.99v4.6a2.25 2.25 0 0 1-1.35 2.07l-5.65 2.38a2.25 2.25 0 0 1-1.7 0l-5.65-2.38A2.25 2.25 0 0 1 4.5 17.25v-4.6l-2.08-.99a1.25 1.25 0 0 1-.22-2.05l9.5-7.4Z" />
                   </svg>
                 </div>
               </div>
-              
-              <!-- Pointer Tip -->
               <div class="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-amber-400 -mt-0.5 drop-shadow-md"></div>
             </div>
+          ` : `
+            <div class="cursor-pointer group flex flex-col items-center z-50 transition-transform hover:scale-110 active:scale-95">
+              <div class="relative flex items-center justify-center">
+                <div class="absolute -inset-2 bg-pink-500/40 rounded-full animate-ping"></div>
+                <div class="relative w-10 h-10 bg-gradient-to-br from-pink-600 via-rose-700 to-pink-900 text-white rounded-full border-2 border-white shadow-2xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white drop-shadow-md animate-bounce" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[9px] border-t-white -mt-0.5 drop-shadow-md"></div>
+              <div class="bg-stone-900/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 whitespace-nowrap max-w-[120px] truncate shadow-lg">${destName}</div>
+            </div>
           `,
-          iconSize: [160, 56],
-          iconAnchor: [80, 42]
+          iconSize: isSchool ? [160, 56] : [140, 64],
+          iconAnchor: isSchool ? [80, 42] : [70, 46]
         });
 
-        const schoolMarker = L.marker([selectedSchoolObj.lat, selectedSchoolObj.lng], {
-          icon: schoolIcon,
+        const destMarker = L.marker([destLat, destLng], {
+          icon: destIcon,
           zIndexOffset: 10000,
-          title: selectedSchoolObj.name
+          title: destName
         }).addTo(map);
 
-        routeLayerRef.current.addLayer(schoolMarker);
-        markersRef.current.push(schoolMarker);
+        routeLayerRef.current.addLayer(destMarker);
+        markersRef.current.push(destMarker);
 
-        // 2. Draw Direct Route Lines from Selected/Hovered Properties to this School
-        const targetProperties = selectedProperty 
-          ? [selectedProperty] 
-          : hoveredProperty 
-            ? [hoveredProperty] 
+        // Draw route lines from selected/hovered properties to destination
+        const targetProperties = selectedProperty
+          ? [selectedProperty]
+          : hoveredProperty
+            ? [hoveredProperty]
             : properties.filter(p => p.id === activeSchoolRouteFilter || activeSchoolRouteFilter === "all");
 
         targetProperties.forEach(property => {
           const [propLat, propLng] = getLatLngForProperty(property);
 
-          // Create direct route line
-          const routeLine = L.polyline([[propLat, propLng], [selectedSchoolObj.lat, selectedSchoolObj.lng]], {
+          const routeLine = L.polyline([[propLat, propLng], [destLat, destLng]], {
             color: lineStrokeColor,
             weight: 3,
             opacity: 0.9,
@@ -278,15 +296,19 @@ export default function MapMarkers({
             dashArray: "8, 8",
             interactive: false
           });
-
           routeLayerRef.current?.addLayer(routeLine);
 
-          // Add distance label at midpoint
-          const midLat = (propLat + selectedSchoolObj.lat) / 2;
-          const midLng = (propLng + selectedSchoolObj.lng) / 2;
+          // Fit map to show both the property and the destination
+          const bounds = L.latLngBounds(
+            [propLat, propLng],
+            [destLat, destLng]
+          );
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: true });
 
-          const dLat = (propLat - selectedSchoolObj.lat) * 111000;
-          const dLng = (propLng - selectedSchoolObj.lng) * 111000 * Math.cos(((propLat + selectedSchoolObj.lat) / 2) * Math.PI / 180);
+          const midLat = (propLat + destLat) / 2;
+          const midLng = (propLng + destLng) / 2;
+          const dLat = (propLat - destLat) * 111000;
+          const dLng = (propLng - destLng) * 111000 * Math.cos(((propLat + destLat) / 2) * Math.PI / 180);
           const distanceMeters = Math.round(Math.sqrt(dLat * dLat + dLng * dLng));
           const distanceKm = (distanceMeters / 1000).toFixed(1);
 
@@ -295,20 +317,15 @@ export default function MapMarkers({
             html: `
               <div class="bg-indigo-600 text-white font-mono text-[10px] px-1.5 py-0.5 rounded-md border-2 border-white shadow-md whitespace-nowrap flex items-center gap-1">
                 <span class="font-black">${distanceKm} km</span>
-                <span class="text-[8px]">to ${selectedSchoolObj.shortName || selectedSchoolObj.name}</span>
               </div>
             `,
-            iconSize: [120, 24],
-            iconAnchor: [60, 12]
+            iconSize: [64, 24],
+            iconAnchor: [32, 12]
           });
 
-          const distanceMarker = L.marker([midLat, midLng], {
-            icon: distanceIcon,
-            interactive: false,
-            zIndexOffset: 5000
-          });
-
-          routeLayerRef.current?.addLayer(distanceMarker);
+          routeLayerRef.current?.addLayer(
+            L.marker([midLat, midLng], { icon: distanceIcon, interactive: false, zIndexOffset: 5000 })
+          );
         });
       }
     }

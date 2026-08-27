@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { X, Phone, MapPin, Calendar, ShieldCheck, Facebook, FileText, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 interface LandlordUser {

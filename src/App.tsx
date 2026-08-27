@@ -1405,6 +1405,9 @@ export default function App() {
         if (selectedProperty?.id === propertyId) {
           setSelectedProperty(updatedProp);
         }
+        if (detailModalProperty?.id === propertyId) {
+          setDetailModalProperty(updatedProp);
+        }
         return updatedProp;
       }
       return p;

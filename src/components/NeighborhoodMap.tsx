@@ -104,8 +104,12 @@ export default function NeighborhoodMap({
   // User location state
   const [userExactGps, setUserExactGps] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [isLocatingUser, setIsLocatingUser] = useState(false);
+  const [liveGpsAccuracy, setLiveGpsAccuracy] = useState<number | null>(null);
   const userGpsMarkerRef = useRef<L.Marker | null>(null);
   const userGpsCircleRef = useRef<L.Circle | null>(null);
+  const gpsWatchIdRef = useRef<number | null>(null);
+  const gpsSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gpsSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Arrow markers state
   const [arrowMarkers, setArrowMarkers] = useState<Record<string, { lat: number; lng: number; title: string; desc?: string; _v?: number }>>({});
@@ -234,6 +238,19 @@ export default function NeighborhoodMap({
     return () => {
       container.removeEventListener("pointerdown", handlePointerDown);
       container.removeEventListener("pointerup", handlePointerUp);
+      // Clean up any in-flight GPS acquisition on unmount
+      if (gpsWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+        gpsWatchIdRef.current = null;
+      }
+      if (gpsSettleTimerRef.current !== null) {
+        clearTimeout(gpsSettleTimerRef.current);
+        gpsSettleTimerRef.current = null;
+      }
+      if (gpsSafetyTimerRef.current !== null) {
+        clearTimeout(gpsSafetyTimerRef.current);
+        gpsSafetyTimerRef.current = null;
+      }
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
@@ -457,39 +474,49 @@ export default function NeighborhoodMap({
       return;
     }
     setIsLocatingUser(true);
+    setLiveGpsAccuracy(null);
 
-    let watchId: number | null = null;
-    let settleTimer: ReturnType<typeof setTimeout> | null = null;
-    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+    gpsWatchIdRef.current = null;
+    gpsSettleTimerRef.current = null;
+    gpsSafetyTimerRef.current = null;
     const positions: GeolocationPosition[] = [];
     const startedAt = Date.now();
-    const MINIMUM_WATCH_TIME = 8000;
-    const ACCURACY_THRESHOLD = 15;
+    const MINIMUM_WATCH_TIME = 12000;
+    const ACCURACY_THRESHOLD = 10;
+    const MAX_ACCEPTED_ACCURACY = 50; // discard dirty samples worse than 50m
 
     const finishLocating = () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
+      if (gpsWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+        gpsWatchIdRef.current = null;
       }
-      if (settleTimer !== null) {
-        clearTimeout(settleTimer);
-        settleTimer = null;
+      if (gpsSettleTimerRef.current !== null) {
+        clearTimeout(gpsSettleTimerRef.current);
+        gpsSettleTimerRef.current = null;
       }
-      if (safetyTimer !== null) {
-        clearTimeout(safetyTimer);
-        safetyTimer = null;
+      if (gpsSafetyTimerRef.current !== null) {
+        clearTimeout(gpsSafetyTimerRef.current);
+        gpsSafetyTimerRef.current = null;
       }
       if (positions.length > 0) {
-        const sortedLatitudes = positions.map(position => position.coords.latitude).sort((a, b) => a - b);
-        const sortedLongitudes = positions.map(position => position.coords.longitude).sort((a, b) => a - b);
-        const middleIndex = Math.floor(positions.length / 2);
-        const finalLat = sortedLatitudes[middleIndex];
-        const finalLng = sortedLongitudes[middleIndex];
-        const bestAccuracy = Math.min(...positions.map(position => position.coords.accuracy || 25));
+        // Keep only clean samples; fall back to all if everything was dirty
+        const cleanPositions = positions.filter(p => (p.coords.accuracy || 999) <= MAX_ACCEPTED_ACCURACY);
+        const usable = cleanPositions.length > 0 ? cleanPositions : positions;
+
+        // Weighted mean: readings with better accuracy (lower value) get higher weight
+        const totalWeight = usable.reduce((sum, p) => sum + 1 / (p.coords.accuracy || 25), 0);
+        const finalLat = usable.reduce((sum, p) => sum + p.coords.latitude / (p.coords.accuracy || 25), 0) / totalWeight;
+        const finalLng = usable.reduce((sum, p) => sum + p.coords.longitude / (p.coords.accuracy || 25), 0) / totalWeight;
+        const bestAccuracy = Math.min(...usable.map(p => p.coords.accuracy || 25));
 
         setUserExactGps({ lat: finalLat, lng: finalLng, accuracy: bestAccuracy });
+        setLiveGpsAccuracy(null);
         if (userGpsMarkerRef.current) {
           userGpsMarkerRef.current.setLatLng([finalLat, finalLng]);
+        }
+        if (userGpsCircleRef.current) {
+          userGpsCircleRef.current.setLatLng([finalLat, finalLng]);
+          userGpsCircleRef.current.setRadius(Math.max(bestAccuracy, 10));
         }
         if (leafletMapRef.current) {
           leafletMapRef.current.flyTo([finalLat, finalLng], 19, { animate: true, duration: 1.2 });
@@ -503,8 +530,15 @@ export default function NeighborhoodMap({
       const uLng = position.coords.longitude;
       const acc = position.coords.accuracy || 25;
 
-      positions.push(position);
-      if (positions.length > 20) positions.shift();
+      // Always update live accuracy display regardless of sample quality
+      setLiveGpsAccuracy(acc);
+
+      // Only store clean samples in the averaging buffer
+      if (acc <= MAX_ACCEPTED_ACCURACY) {
+        positions.push(position);
+        if (positions.length > 20) positions.shift();
+      }
+
       setUserExactGps({ lat: uLat, lng: uLng, accuracy: acc });
 
       if (leafletMapRef.current) {
@@ -531,9 +565,10 @@ export default function NeighborhoodMap({
 
         if (userGpsCircleRef.current) {
           userGpsCircleRef.current.setLatLng([uLat, uLng]);
+          userGpsCircleRef.current.setRadius(Math.max(acc, 10));
         } else {
           userGpsCircleRef.current = L.circle([uLat, uLng], {
-            radius: 25,
+            radius: Math.max(acc, 10),
             color: "#3b82f6",
             weight: 1.5,
             opacity: 0.55,
@@ -542,7 +577,6 @@ export default function NeighborhoodMap({
             interactive: false,
           }).addTo(map);
         }
-
       }
 
       const hasStabilized = Date.now() - startedAt >= MINIMUM_WATCH_TIME;
@@ -551,7 +585,7 @@ export default function NeighborhoodMap({
       }
     };
 
-    watchId = navigator.geolocation.watchPosition(
+    gpsWatchIdRef.current = navigator.geolocation.watchPosition(
       updateMap,
       () => {
         finishLocating();
@@ -560,8 +594,8 @@ export default function NeighborhoodMap({
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
 
-    settleTimer = setTimeout(finishLocating, MINIMUM_WATCH_TIME);
-    safetyTimer = setTimeout(finishLocating, 45000);
+    gpsSettleTimerRef.current = setTimeout(finishLocating, MINIMUM_WATCH_TIME);
+    gpsSafetyTimerRef.current = setTimeout(finishLocating, 45000);
   };
 
   const searchResults = createSearchLocations(properties).filter(item =>
@@ -616,6 +650,7 @@ export default function NeighborhoodMap({
         isMobileQuickJumpOpen={isMobileQuickJumpOpen}
         setIsMobileQuickJumpOpen={setIsMobileQuickJumpOpen}
         isLocatingUser={isLocatingUser}
+        liveGpsAccuracy={liveGpsAccuracy}
         locateUser={handleLocateUser}
         userExactGps={userExactGps}
         arrowMarkers={arrowMarkers}

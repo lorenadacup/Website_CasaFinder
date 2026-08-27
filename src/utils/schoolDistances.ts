@@ -88,7 +88,7 @@ export function deleteCustomSchoolItem(id: string) {
 export const DEFAULT_GUMACA_SCHOOLS = [
   {
     id: "slsu-main",
-    name: "SLSU Tabing Dagat Main Campus 🎓",
+    name: "SLSU Tabing Dagat Campus 🎓🌊",
     shortName: "SLSU Tabing Dagat",
     type: "University" as const,
     lat: 13.9230,
@@ -96,7 +96,7 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     entranceLat: 13.9230,
     entranceLng: 122.1014,
     isEntranceInvisible: false,
-    desc: "Southern Luzon State University - Main/Tabing Dagat Campus"
+    desc: "Southern Luzon State University - Tabing Dagat Campus"
   },
   {
     id: "slsu-villa-nava",
@@ -105,10 +105,22 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     type: "University" as const,
     lat: 13.912125,
     lng: 122.104057,
-    entranceLat: 13.911900,
-    entranceLng: 122.104100,
+    entranceLat: 13.912125,
+    entranceLng: 122.104057,
     isEntranceInvisible: false,
     desc: "Southern Luzon State University - Villa Nava Campus"
+  },
+  {
+    id: "eqc-college",
+    name: "Eastern Quezon College (EQC) 🏛️",
+    shortName: "EQC",
+    type: "College" as const,
+    lat: 13.923315,
+    lng: 122.097557,
+    entranceLat: 13.923315,
+    entranceLng: 122.097557,
+    isEntranceInvisible: false,
+    desc: "Eastern Quezon College, Gumaca"
   },
   {
     id: "gnhs-high",
@@ -123,62 +135,14 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     desc: "Gumaca National High School, Mabini/Poblacion"
   },
   {
-    id: "plaza-rizal-elem",
-    name: "Plaza Rizal Elementary School 🏫",
-    shortName: "Plaza Rizal Elem",
-    type: "Elementary" as const,
-    lat: 13.921200,
-    lng: 122.099200,
-    entranceLat: 13.921200,
-    entranceLng: 122.099000,
-    isEntranceInvisible: false,
-    desc: "Plaza Rizal Elementary School, Town Proper"
-  },
-  {
-    id: "gumaca-west-central",
-    name: "Gumaca West Central School 🏫",
-    shortName: "Gumaca West Central",
-    type: "Elementary" as const,
-    lat: 13.918500,
-    lng: 122.098500,
-    entranceLat: 13.918600,
-    entranceLng: 122.098500,
-    isEntranceInvisible: false,
-    desc: "Gumaca West Central Elementary School, M.H. Del Pilar St."
-  },
-  {
-    id: "gumaca-east-central",
-    name: "Gumaca East Central School 🏫",
-    shortName: "Gumaca East Central",
-    type: "Elementary" as const,
-    lat: 13.917800,
-    lng: 122.099500,
-    entranceLat: 13.917900,
-    entranceLng: 122.099500,
-    isEntranceInvisible: false,
-    desc: "Gumaca East Central Elementary School, Capisonda St."
-  },
-  {
-    id: "eqc-college",
-    name: "Eastern Quezon College (EQC) 🏛️",
-    shortName: "EQC College",
-    type: "College" as const,
-    lat: 13.923315,
-    lng: 122.097557,
-    entranceLat: 13.922800,
-    entranceLng: 122.097500,
-    isEntranceInvisible: false,
-    desc: "Eastern Quezon College, Gumaca"
-  },
-  {
     id: "holy-child",
     name: "Holy Child Jesus College / Academy 🏫",
-    shortName: "Holy Child Jesus",
+    shortName: "Holy Child",
     type: "College" as const,
     lat: 13.921889,
     lng: 122.099639,
-    entranceLat: 13.921800,
-    entranceLng: 122.099600,
+    entranceLat: 13.921889,
+    entranceLng: 122.099639,
     isEntranceInvisible: false,
     desc: "Holy Child Jesus College, Town Proper"
   },
@@ -190,10 +154,10 @@ export const DEFAULT_GUMACA_SCHOOLS = [
     lat: 13.921300,
     lng: 122.098200,
     entranceLat: 13.921300,
-    entranceLng: 122.098300,
+    entranceLng: 122.098200,
     isEntranceInvisible: false,
     desc: "Philippine Institute of Arts and Technology, Gumaca"
-  }
+  },
 ];
 
 const LOCAL_STORAGE_KEY_SCHOOL_COORDS = "casafinder_custom_school_coords_v1";
@@ -341,6 +305,7 @@ export function parsePropertyLatLng(coords: any, neighborhood?: string, property
     }
   }
 
+  // Hardcoded fallbacks for seeded demo properties (only reached if no custom coord saved)
   if (propertyId === "slsu-elite-dorm") return [13.9252, 122.0975];
   if (propertyId === "dagat-bay-coliving") return [13.9258, 122.0965];
   if (propertyId === "la-villa-estudiante") return [13.912125, 122.104057];
@@ -459,5 +424,46 @@ export function getSchoolDistancesForProperty(
       walkingMinutes: walkingMins,
       tricycleMinutes: tricycleMins,
     };
+  }).sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
+// ─── Destination Distances (uses DEFAULT_ARROW_MARKERS as source of truth) ───
+
+import { DEFAULT_ARROW_MARKERS } from "./mapConstants";
+
+export interface DestinationDistance {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+  walkingMinutes: number;
+  tricycleMinutes: number;
+}
+
+/**
+ * Calculates distances from a property lat/lng to every destination in DEFAULT_ARROW_MARKERS.
+ * Returns sorted ascending by distance.
+ */
+export function getDestinationDistances(lat: number, lng: number): DestinationDistance[] {
+  const R = 6371; // Earth radius in km
+
+  return Object.entries(DEFAULT_ARROW_MARKERS).map(([id, dest]) => {
+    const dLat = (dest.lat - lat) * (Math.PI / 180);
+    const dLon = (dest.lng - lng) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat * (Math.PI / 180)) *
+        Math.cos(dest.lat * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const straightKm = R * c;
+    // Road winding multiplier ~1.22x
+    const roadKm = Math.max(0.05, Math.round(straightKm * 1.22 * 100) / 100);
+    const walkingMinutes = Math.max(1, Math.round((roadKm / 4.5) * 60));
+    const tricycleMinutes = Math.max(1, Math.round((roadKm / 18) * 60));
+
+    return { id, name: dest.title, lat: dest.lat, lng: dest.lng, distanceKm: roadKm, walkingMinutes, tricycleMinutes };
   }).sort((a, b) => a.distanceKm - b.distanceKm);
 }

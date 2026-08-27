@@ -15,9 +15,9 @@ export default function AboutModal({
   prefLanguage = "english",
   userRole
 }: AboutModalProps) {
-  if (!isOpen) return null;
-
   const [expandedMember, setExpandedMember] = useState<number | null>(null);
+
+  if (!isOpen) return null;
 
   const team = [
     { name: "Oliver D. Macarandang",      role: "Lead Developer",                   initial: "O", color: "from-violet-500 to-indigo-600", photo: "/oliver.jpg"  },

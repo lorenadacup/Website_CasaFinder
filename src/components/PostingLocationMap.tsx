@@ -146,12 +146,7 @@ export const PostingLocationMap: React.FC<PostingLocationMapProps> = ({
       return marker;
     };
 
-    // 2. Add Property Pin ONLY if landlord user has set coordinates / detected GPS
-    if (lat !== null && lng !== null) {
-      propertyMarkerRef.current = createPropertyMarker(map, lat, lng);
-    }
-
-    // 3. Add Property Pin ONLY if landlord user has set coordinates / detected GPS
+    // 2. Add Property Pin if landlord has set coordinates / detected GPS
     if (lat !== null && lng !== null) {
       propertyMarkerRef.current = createPropertyMarker(map, lat, lng);
     }

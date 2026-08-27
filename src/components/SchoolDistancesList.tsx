@@ -1,12 +1,12 @@
 import React from "react";
-import { getSchoolDistancesForProperty, parsePropertyLatLng, SchoolDistance } from "../utils/schoolDistances";
-import { GraduationCap, MapPin, Footprints, Navigation, Compass } from "lucide-react";
+import { parsePropertyLatLng, getDestinationDistances, DestinationDistance } from "../utils/schoolDistances";
+import { MapPin, Footprints, Navigation, Compass } from "lucide-react";
 
 interface SchoolDistancesListProps {
   coordinates?: { x: number; y: number };
   propertyName?: string;
   neighborhood?: string;
-  onViewSchoolOnMap?: (schoolLat: number, schoolLng: number, schoolName: string, schoolId: string) => void;
+  onViewSchoolOnMap?: (lat: number, lng: number, name: string, id: string) => void;
   language?: string;
 }
 
@@ -18,34 +18,28 @@ export function SchoolDistancesList({
   language = "tagalog"
 }: SchoolDistancesListProps) {
   const isTagalog = language === "tagalog";
-  const [schoolRevision, setSchoolRevision] = React.useState(0);
 
-  React.useEffect(() => {
-    const handleUpdate = () => {
-      setSchoolRevision(r => r + 1);
-    };
-    window.addEventListener("casafinder_school_coords_updated", handleUpdate);
-    return () => window.removeEventListener("casafinder_school_coords_updated", handleUpdate);
-  }, []);
+  const [lat, lng] = React.useMemo(
+    () => parsePropertyLatLng(coordinates, neighborhood),
+    [coordinates, neighborhood]
+  );
 
-  // Parse accurate Lat/Lng from coordinates or neighborhood fallback.
-  // Memoized so it only recomputes when inputs change, avoiding repeated work on every modal re-render.
-  const [lat, lng] = React.useMemo(() => parsePropertyLatLng(coordinates, neighborhood), [coordinates, neighborhood]);
-
-  const distances: SchoolDistance[] = React.useMemo(() => {
-    return getSchoolDistancesForProperty(lat, lng);
-  }, [lat, lng, schoolRevision]);
+  const destinations: DestinationDistance[] = React.useMemo(
+    () => getDestinationDistances(lat, lng),
+    [lat, lng]
+  );
 
   return (
     <div className="bg-gradient-to-br from-pink-50/50 via-white to-blue-50/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-900 border border-pink-100/80 dark:border-stone-800 rounded-2xl p-2.5 sm:p-3 space-y-2 transition-colors">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-pink-100/80 dark:border-stone-800 pb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <div className="p-1 bg-gradient-to-tr from-pink-500 to-blue-600 text-white rounded-md shadow-2xs shrink-0">
-            <GraduationCap className="h-3.5 w-3.5" />
+            <MapPin className="h-3.5 w-3.5" />
           </div>
           <div className="min-w-0">
             <h4 className="font-display text-[11px] sm:text-xs font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wider flex items-center gap-1 truncate">
-              {isTagalog ? "Layo sa mga Paaralan sa Gumaca 🏫" : "Distance to Schools in Gumaca 🏫"}
+              {isTagalog ? "Layo sa mga Destinasyon sa Gumaca 📍" : "Distance to Destinations in Gumaca 📍"}
             </h4>
             <p className="text-[9px] sm:text-[10px] text-stone-500 dark:text-stone-400 font-light truncate">
               {isTagalog
@@ -59,8 +53,9 @@ export function SchoolDistancesList({
         </span>
       </div>
 
+      {/* List */}
       <div className="grid grid-cols-1 gap-1.5 max-h-72 overflow-y-auto pr-0.5 scrollbar-thin">
-        {distances.map((item, idx) => {
+        {destinations.map((item, idx) => {
           const isNearest = idx === 0;
           return (
             <div
@@ -73,7 +68,9 @@ export function SchoolDistancesList({
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shrink-0 font-mono ${
-                  isNearest ? "bg-gradient-to-r from-pink-500 to-blue-600 text-white" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
+                  isNearest
+                    ? "bg-gradient-to-r from-pink-500 to-blue-600 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
                 }`}>
                   #{idx + 1}
                 </span>
@@ -84,7 +81,7 @@ export function SchoolDistancesList({
                       {item.name}
                     </span>
                     {isNearest && (
-                      <span className="bg-gradient-to-r from-pink-500 to-rose-600 text-white text-[8px] font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider shrink-0">
+                      <span className="bg-gradient-to-r from-pink-500 to-rose-600 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
                         {isTagalog ? "Malapit 🌟" : "Nearest 🌟"}
                       </span>
                     )}
