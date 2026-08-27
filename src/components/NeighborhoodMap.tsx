@@ -457,18 +457,55 @@ export default function NeighborhoodMap({
       return;
     }
     setIsLocatingUser(true);
-    
-    let watchId: number | null = null;
-    const ACCURACY_THRESHOLD = 15; // Stop watching once accuracy is better than 15 meters
-    let bestPosition: { lat: number; lng: number; accuracy: number } | null = null;
 
-    const updateMap = (position: any) => {
+    let watchId: number | null = null;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+    const positions: GeolocationPosition[] = [];
+    const startedAt = Date.now();
+    const MINIMUM_WATCH_TIME = 8000;
+    const ACCURACY_THRESHOLD = 15;
+
+    const finishLocating = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (settleTimer !== null) {
+        clearTimeout(settleTimer);
+        settleTimer = null;
+      }
+      if (safetyTimer !== null) {
+        clearTimeout(safetyTimer);
+        safetyTimer = null;
+      }
+      if (positions.length > 0) {
+        const sortedLatitudes = positions.map(position => position.coords.latitude).sort((a, b) => a - b);
+        const sortedLongitudes = positions.map(position => position.coords.longitude).sort((a, b) => a - b);
+        const middleIndex = Math.floor(positions.length / 2);
+        const finalLat = sortedLatitudes[middleIndex];
+        const finalLng = sortedLongitudes[middleIndex];
+        const bestAccuracy = Math.min(...positions.map(position => position.coords.accuracy || 25));
+
+        setUserExactGps({ lat: finalLat, lng: finalLng, accuracy: bestAccuracy });
+        if (userGpsMarkerRef.current) {
+          userGpsMarkerRef.current.setLatLng([finalLat, finalLng]);
+        }
+        if (leafletMapRef.current) {
+          leafletMapRef.current.flyTo([finalLat, finalLng], 19, { animate: true, duration: 1.2 });
+        }
+      }
+      setIsLocatingUser(false);
+    };
+
+    const updateMap = (position: GeolocationPosition) => {
       const uLat = position.coords.latitude;
       const uLng = position.coords.longitude;
       const acc = position.coords.accuracy || 25;
 
-      bestPosition = { lat: uLat, lng: uLng, accuracy: acc };
-      setUserExactGps(bestPosition);
+      positions.push(position);
+      if (positions.length > 20) positions.shift();
+      setUserExactGps({ lat: uLat, lng: uLng, accuracy: acc });
 
       if (leafletMapRef.current) {
         const map = leafletMapRef.current;
@@ -493,39 +530,38 @@ export default function NeighborhoodMap({
         }
 
         if (userGpsCircleRef.current) {
-          userGpsCircleRef.current.remove();
-          userGpsCircleRef.current = null;
+          userGpsCircleRef.current.setLatLng([uLat, uLng]);
+        } else {
+          userGpsCircleRef.current = L.circle([uLat, uLng], {
+            radius: 25,
+            color: "#3b82f6",
+            weight: 1.5,
+            opacity: 0.55,
+            fillColor: "#3b82f6",
+            fillOpacity: 0.12,
+            interactive: false,
+          }).addTo(map);
         }
 
-        map.flyTo([uLat, uLng], 17, { animate: true, duration: 1.2 });
+      }
 
-        // Stop watching if accuracy is good enough
-        if (acc <= ACCURACY_THRESHOLD && watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-          setIsLocatingUser(false);
-        }
+      const hasStabilized = Date.now() - startedAt >= MINIMUM_WATCH_TIME;
+      if (hasStabilized && acc <= ACCURACY_THRESHOLD) {
+        finishLocating();
       }
     };
 
     watchId = navigator.geolocation.watchPosition(
       updateMap,
       () => {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-        }
-        setIsLocatingUser(false);
+        finishLocating();
         alert("Hindi makuha ang iyong lokasyon. Siguraduhing pinayagan ang Location Permission sa iyong browser.");
       },
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
 
-    // Safety timeout: stop watching after 45 seconds even if accuracy not perfect
-    setTimeout(() => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        setIsLocatingUser(false);
-      }
-    }, 45000);
+    settleTimer = setTimeout(finishLocating, MINIMUM_WATCH_TIME);
+    safetyTimer = setTimeout(finishLocating, 45000);
   };
 
   const searchResults = createSearchLocations(properties).filter(item =>
