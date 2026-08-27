@@ -3,7 +3,7 @@ import L from "leaflet";
 import { motion } from "motion/react";
 import { getGumacaSchools, parsePropertyLatLng } from "../utils/schoolDistances";
 import { getStreetInfoForCoordinates, StreetInfo } from "../utils/streetInfo";
-import { GUMACA_CENTER, DEFAULT_ZOOM, GUMACA_LANDMARKS, MapMode, GRID_CONFIG, GOOGLE_SATELLITE_URL, GOOGLE_STREET_URL, MAX_ZOOM } from "../utils/mapConstants";
+import { GUMACA_CENTER, DEFAULT_ZOOM, GUMACA_LANDMARKS, MapMode, GRID_CONFIG, GOOGLE_SATELLITE_URL, GOOGLE_STREET_URL, MAX_ZOOM, DEFAULT_ARROW_MARKERS } from "../utils/mapConstants";
 import { AiMatch } from "../types";
 import { Property } from "../data/properties";
 import { Map, Navigation, Compass, Search, Maximize2, Minimize2 } from "lucide-react";
@@ -98,7 +98,6 @@ export default function NeighborhoodMap({
   const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapMode, setMapMode] = useState<MapMode>("satellite");
-  const [showLandmarks, setShowLandmarks] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showSchoolsOnMap, setShowSchoolsOnMap] = useState(false);
 
@@ -432,7 +431,8 @@ export default function NeighborhoodMap({
     const finalLat = savedCoords?.lat ?? lat;
     const finalLng = savedCoords?.lng ?? lng;
 
-    setArrowMarkers({ [id]: { lat: finalLat, lng: finalLng, title, desc } });
+    // Only show the selected arrow (replace any previous one)
+    setArrowMarkers({ [id]: { lat: finalLat, lng: finalLng, title, desc, _v: arrowMarkers[id]?._v ?? 1 } });
     panToArea(finalLat, finalLng, zoom);
   };
 
@@ -473,17 +473,13 @@ export default function NeighborhoodMap({
             className: "user-gps-exact-pin",
             html: `
               <div class="relative flex flex-col items-center">
-                <div class="absolute -top-1 w-10 h-10 bg-sky-500/30 rounded-full animate-ping"></div>
-                <div class="bg-sky-500 text-white p-2 rounded-full shadow-lg ring-4 ring-sky-300 border-2 border-white flex items-center justify-center z-10">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                </div>
-                <div class="bg-sky-950 text-sky-200 text-[10px] font-black px-2 py-0.5 rounded-full shadow-md mt-1 border border-sky-400/40 whitespace-nowrap z-10">
-                  📍 Exact Location Mo
-                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3b82f6" width="32" height="40" class="drop-shadow-lg">
+                  <path d="M12 0C7.03 0 3 4.03 3 9c0 5.25 9 15 9 15s9-9.75 9-15c0-4.97-4.03-9-9-9zm0 12c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+                </svg>
               </div>
             `,
-            iconSize: [110, 50],
-            iconAnchor: [55, 20],
+            iconSize: [32, 40],
+            iconAnchor: [16, 40],
           });
 
           if (userGpsMarkerRef.current) {
@@ -493,16 +489,8 @@ export default function NeighborhoodMap({
           }
 
           if (userGpsCircleRef.current) {
-            userGpsCircleRef.current.setLatLng([uLat, uLng]);
-            userGpsCircleRef.current.setRadius(Math.max(acc, 15));
-          } else {
-            userGpsCircleRef.current = L.circle([uLat, uLng], {
-              radius: Math.max(acc, 15),
-              color: "#0284c7",
-              fillColor: "#38bdf8",
-              fillOpacity: 0.25,
-              weight: 2,
-            }).addTo(map);
+            userGpsCircleRef.current.remove();
+            userGpsCircleRef.current = null;
           }
 
           map.flyTo([uLat, uLng], 17, { animate: true, duration: 1.2 });
@@ -557,8 +545,6 @@ export default function NeighborhoodMap({
       <MapControls
         mapMode={mapMode}
         setMapMode={setMapMode}
-        showLandmarks={showLandmarks}
-        setShowLandmarks={setShowLandmarks}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
         isFullscreen={isFullscreen}
@@ -572,6 +558,8 @@ export default function NeighborhoodMap({
         isLocatingUser={isLocatingUser}
         locateUser={handleLocateUser}
         userExactGps={userExactGps}
+        arrowMarkers={arrowMarkers}
+        triggerArrowHighlight={triggerArrowHighlight}
       />
 
       {/* Search Results */}
@@ -606,7 +594,6 @@ export default function NeighborhoodMap({
         onSelectProperty={onSelectProperty}
         onOpenDetails={onOpenDetails}
         aiMatches={aiMatches}
-        showLandmarks={showLandmarks}
         showSchoolsOnMap={showSchoolsOnMap}
         isEntranceEditingMode={isEntranceEditingMode}
         activeSchoolRouteFilter={activeSchoolRouteFilter}

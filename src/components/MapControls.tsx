@@ -1,12 +1,10 @@
 import React from "react";
-import { Map, Navigation, Compass, Search, Maximize2, Minimize2 } from "lucide-react";
-import { MapMode } from "../utils/mapConstants";
+import { Navigation, Compass, Search, Maximize2, Minimize2, MapPin } from "lucide-react";
+import { MapMode, DEFAULT_ARROW_MARKERS } from "../utils/mapConstants";
 
 interface MapControlsProps {
   mapMode: MapMode;
   setMapMode: (mode: MapMode) => void;
-  showLandmarks: boolean;
-  setShowLandmarks: (show: boolean) => void;
   showGrid: boolean;
   setShowGrid: (show: boolean) => void;
   isFullscreen: boolean;
@@ -20,13 +18,13 @@ interface MapControlsProps {
   isLocatingUser: boolean;
   locateUser: () => void;
   userExactGps: { lat: number; lng: number; accuracy: number } | null;
+  arrowMarkers?: Record<string, { lat: number; lng: number; title: string; desc?: string }>;
+  triggerArrowHighlight?: (lat: number, lng: number, title: string, desc?: string, zoom?: number) => void;
 }
 
 export default function MapControls({
   mapMode,
   setMapMode,
-  showLandmarks,
-  setShowLandmarks,
   showGrid,
   setShowGrid,
   isFullscreen,
@@ -40,6 +38,8 @@ export default function MapControls({
   isLocatingUser,
   locateUser,
   userExactGps,
+  arrowMarkers = {},
+  triggerArrowHighlight,
 }: MapControlsProps) {
   return (
     <>
@@ -86,17 +86,6 @@ export default function MapControls({
           {/* Toggle Buttons */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowLandmarks(!showLandmarks)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${showLandmarks
-                ? "bg-gradient-to-r from-emerald-900/70 to-teal-900/70 text-emerald-300 border border-emerald-600/40"
-                : "bg-stone-800/60 text-stone-400 hover:text-stone-200 hover:bg-stone-700/60 border border-stone-700/40"
-                }`}
-            >
-              <Map className="w-4 h-4" />
-              Landmarks
-            </button>
-
-            <button
               onClick={() => setShowGrid(!showGrid)}
               className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${showGrid
                 ? "bg-gradient-to-r from-amber-900/70 to-orange-900/70 text-amber-300 border border-amber-600/40"
@@ -106,6 +95,26 @@ export default function MapControls({
               <Compass className="w-4 h-4" />
               Grid
             </button>
+
+            {/* Quick Jump to Arrows Dropdown */}
+            <select
+              onChange={(e) => {
+                const arrowId = e.target.value;
+                if (arrowId && DEFAULT_ARROW_MARKERS[arrowId as keyof typeof DEFAULT_ARROW_MARKERS] && triggerArrowHighlight) {
+                  const arrow = DEFAULT_ARROW_MARKERS[arrowId as keyof typeof DEFAULT_ARROW_MARKERS];
+                  triggerArrowHighlight(arrow.lat, arrow.lng, arrow.title, arrow.desc, 18);
+                }
+                e.target.value = "";
+              }}
+              className="px-3 py-2 rounded-lg bg-stone-800/60 text-stone-400 hover:text-stone-200 hover:bg-stone-700/60 border border-stone-700/40 text-sm font-medium transition-all cursor-pointer"
+            >
+              <option value="">Quick Jump to Arrow 📍</option>
+              {Object.entries(DEFAULT_ARROW_MARKERS).map(([arrowId, arrow]) => (
+                <option key={arrowId} value={arrowId}>
+                  {arrow.title}
+                </option>
+              ))}
+            </select>
 
             <button
               onClick={toggleFullscreen}

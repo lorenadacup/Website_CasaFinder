@@ -3,7 +3,6 @@ import L from "leaflet";
 import { Property } from "../data/properties";
 import { AiMatch } from "../types";
 import { getGumacaSchools } from "../utils/schoolDistances";
-import { GUMACA_LANDMARKS } from "../utils/mapConstants";
 
 interface MapMarkersProps {
   map: L.Map | null;
@@ -12,7 +11,6 @@ interface MapMarkersProps {
   onSelectProperty: (property: Property) => void;
   onOpenDetails?: (property: Property) => void;
   aiMatches?: AiMatch[];
-  showLandmarks: boolean;
   showSchoolsOnMap: boolean;
   isEntranceEditingMode: boolean;
   activeSchoolRouteFilter: string;
@@ -31,7 +29,6 @@ export default function MapMarkers({
   onSelectProperty,
   onOpenDetails,
   aiMatches,
-  showLandmarks,
   showSchoolsOnMap,
   isEntranceEditingMode,
   activeSchoolRouteFilter,
@@ -51,31 +48,6 @@ export default function MapMarkers({
     // Clear previous markers
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
-
-    // Add Landmark Markers only if showLandmarks is explicitly toggled on
-    if (showLandmarks) {
-      GUMACA_LANDMARKS.forEach(lm => {
-        const landmarkIcon = L.divIcon({
-          className: "custom-landmark-pin",
-          html: `
-            <div class="bg-emerald-700 text-white text-[10px] font-bold px-2 py-1 rounded-lg border-2 border-white shadow-md flex items-center gap-1 whitespace-nowrap">
-              <span>${lm.name}</span>
-            </div>
-          `,
-          iconSize: [120, 28],
-          iconAnchor: [60, 14]
-        });
-
-        const marker = L.marker([lm.lat, lm.lng], { icon: landmarkIcon }).addTo(map);
-        marker.bindPopup(`
-          <div class="p-1 font-sans">
-            <strong class="text-xs text-emerald-800">${lm.name}</strong>
-            <p class="text-[11px] text-gray-600 m-0">${lm.desc}</p>
-          </div>
-        `);
-        markersRef.current.push(marker);
-      });
-    }
 
     // Add School Markers when showSchoolsOnMap is enabled
     if (showSchoolsOnMap) {
@@ -354,7 +326,7 @@ export default function MapMarkers({
     properties,
     selectedProperty,
     aiMatches,
-    showLandmarks,
+
     showSchoolsOnMap,
     isEntranceEditingMode,
     activeSchoolRouteFilter,

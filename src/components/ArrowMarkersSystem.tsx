@@ -88,7 +88,7 @@ export default function ArrowMarkersSystem({
           return result;
         }
       } catch (_) {}
-      return DEFAULT_ARROW_MARKERS;
+      return {};
     })();
 
     setArrowMarkers(savedMarkers);
