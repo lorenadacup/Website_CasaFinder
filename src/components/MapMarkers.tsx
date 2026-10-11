@@ -42,6 +42,8 @@ export default function MapMarkers({
 }: MapMarkersProps) {
   const markersRef = useRef<L.Marker[]>([]);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
+  // Track the last route key that was fitted — prevents re-fitting when user zooms in
+  const lastFittedRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!map) return;
@@ -287,16 +289,21 @@ export default function MapMarkers({
             ? [hoveredProperty]
             : properties.filter(p => p.id === activeSchoolRouteFilter || activeSchoolRouteFilter === "all");
 
-        // Fit map bounds once for all target properties (before async routes load)
+        // Fit map bounds once per unique property+destination combo — skip if user already zoomed in
         if (targetProperties.length > 0) {
           const firstProp = targetProperties[0];
           const [fp0, fp1] = getLatLngForProperty(firstProp);
-          const bounds = L.latLngBounds([fp0, fp1], [destLat, destLng]);
-          targetProperties.slice(1).forEach(p => {
-            const [la, lo] = getLatLngForProperty(p);
-            bounds.extend([la, lo]);
-          });
-          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: true });
+          const routeKey = `${fp0},${fp1}->${destLat},${destLng}`;
+
+          if (lastFittedRouteRef.current !== routeKey) {
+            lastFittedRouteRef.current = routeKey;
+            const bounds = L.latLngBounds([fp0, fp1], [destLat, destLng]);
+            targetProperties.slice(1).forEach(p => {
+              const [la, lo] = getLatLngForProperty(p);
+              bounds.extend([la, lo]);
+            });
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: true });
+          }
         }
 
         // Helper: build the distance label icon
@@ -316,13 +323,24 @@ export default function MapMarkers({
           propLat: number, propLng: number,
           layer: L.LayerGroup
         ) => {
+          // Outline
           layer.addLayer(L.polyline([[propLat, propLng], [destLat, destLng]], {
-            color: lineStrokeColor,
-            weight: 3,
-            opacity: 0.7,
+            color: "#ffffff",
+            weight: 8,
+            opacity: 0.4,
             lineCap: "round",
             lineJoin: "round",
-            dashArray: "8, 8",
+            dashArray: "10, 10",
+            interactive: false
+          }));
+          // Main line
+          layer.addLayer(L.polyline([[propLat, propLng], [destLat, destLng]], {
+            color: "#3b82f6",
+            weight: 5,
+            opacity: 0.8,
+            lineCap: "round",
+            lineJoin: "round",
+            dashArray: "10, 10",
             interactive: false
           }));
           const midLat = (propLat + destLat) / 2;
@@ -344,10 +362,32 @@ export default function MapMarkers({
           cancelled: { value: boolean }
         ) => {
           try {
+            // Step 1: Snap both property and destination to nearest road nodes
+            const [snapPropRes, snapDestRes] = await Promise.all([
+              fetch(`https://router.project-osrm.org/nearest/v1/driving/${propLng},${propLat}?number=1`),
+              fetch(`https://router.project-osrm.org/nearest/v1/driving/${destLng},${destLat}?number=1`),
+            ]);
+            if (cancelled.value) return;
+
+            const [snapPropData, snapDestData] = await Promise.all([
+              snapPropRes.json(),
+              snapDestRes.json(),
+            ]);
+            if (cancelled.value) return;
+
+            // Use snapped coords if available, otherwise fall back to original
+            const snappedProp = snapPropData?.waypoints?.[0]?.location;
+            const snappedDest = snapDestData?.waypoints?.[0]?.location;
+            const startLng = snappedProp ? snappedProp[0] : propLng;
+            const startLat = snappedProp ? snappedProp[1] : propLat;
+            const endLng   = snappedDest ? snappedDest[0] : destLng;
+            const endLat   = snappedDest ? snappedDest[1] : destLat;
+
+            // Step 2: Route between snapped points
             const url =
-              `https://router.project-osrm.org/route/v1/foot/` +
-              `${propLng},${propLat};${destLng},${destLat}` +
-              `?overview=full&geometries=geojson&steps=false`;
+              `https://router.project-osrm.org/route/v1/driving/` +
+              `${startLng},${startLat};${endLng},${endLat}` +
+              `?overview=full&geometries=geojson&steps=false&alternatives=false&continue_straight=true`;
 
             const res = await fetch(url);
             if (cancelled.value) return;
@@ -364,10 +404,21 @@ export default function MapMarkers({
               ([lng, lat]: [number, number]) => [lat, lng]
             );
 
+            // Outline layer for contrast on satellite background
             layer.addLayer(L.polyline(coords, {
-              color: lineStrokeColor,
-              weight: 4,
-              opacity: 0.9,
+              color: "#ffffff",
+              weight: 8,
+              opacity: 0.5,
+              lineCap: "round",
+              lineJoin: "round",
+              interactive: false
+            }));
+
+            // Main route line on top
+            layer.addLayer(L.polyline(coords, {
+              color: "#3b82f6",
+              weight: 5,
+              opacity: 0.95,
               lineCap: "round",
               lineJoin: "round",
               interactive: false
@@ -404,6 +455,7 @@ export default function MapMarkers({
 
     return () => {
       cancelled.value = true;
+      lastFittedRouteRef.current = null;
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
       if (routeLayerRef.current) {
