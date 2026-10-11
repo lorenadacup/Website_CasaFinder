@@ -579,6 +579,9 @@ export default function NeighborhoodMap({
             fillOpacity: 0.12,
             interactive: false,
           }).addTo(map);
+
+          // Zoom in to user location on first fix only
+          map.flyTo([uLat, uLng], 18, { animate: true, duration: 1.2 });
         }
       }
 
