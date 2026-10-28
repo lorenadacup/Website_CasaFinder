@@ -73,7 +73,7 @@ const createSearchLocations = (properties: Property[]) => [
   { name: "PhilHealth Local Health 🏥", lat: 13.9204, lng: 122.0976, detail: "PhilHealth Local Health Office, Gumaca" },
   { name: "54Mb Cellphone 📱", lat: 13.9208, lng: 122.1000, detail: "Cellphone Shop, Poblacion, Gumaca" },
   { name: "DrugCheck Philippines Inc. 💊", lat: 13.9182, lng: 122.0995, detail: "DrugCheck Philippines Inc., Gumaca" },
-  { name: "Public Attorney's Office (PAO) 🏛️", lat: 13.9161, lng: 122.1013, detail: "Public Attorney's Office - Gumaca, Quezon" },
+  { name: "Public Attorney's Office (PAO) 🏛️", lat: 13.9161, lng: 122.1011, detail: "Public Attorney's Office - Gumaca, Quezon" },
   { name: "Gumaca Hall of Justice (RTC) ⚖️", lat: 13.9161, lng: 122.1007, detail: "Gumaca Hall of Justice - Regional Trial Court, Gumaca" },
   { name: "McDonald's Gumaca 🍟🍔", lat: 13.920751, lng: 122.100299, detail: "Fast Food Restaurant, Maharlika Highway" },
   { name: "Chowking Gumaca 🥢🥟", lat: 13.920489, lng: 122.098769, detail: "Fast Food Restaurant, Maharlika Highway" },

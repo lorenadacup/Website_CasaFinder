@@ -46,7 +46,7 @@ export const GUMACA_LANDMARKS = [
   { name: "PhilHealth Local Health 🏥", lat: 13.9204, lng: 122.0976, type: "Government", desc: "PhilHealth Local Health Office, Gumaca" },
   { name: "54Mb Cellphone 📱", lat: 13.9208, lng: 122.1000, type: "Shopping", desc: "54Mb Cellphone Shop, Poblacion, Gumaca" },
   { name: "DrugCheck Philippines Inc. 💊", lat: 13.9182, lng: 122.0995, type: "Pharmacy", desc: "DrugCheck Philippines Inc., Gumaca" },
-  { name: "Public Attorney's Office (PAO) 🏛️", lat: 13.9161, lng: 122.1013, type: "Government", desc: "Public Attorney's Office - Gumaca, Quezon" },
+  { name: "Public Attorney's Office (PAO) 🏛️", lat: 13.9161, lng: 122.1011, type: "Government", desc: "Public Attorney's Office - Gumaca, Quezon" },
   { name: "Gumaca Hall of Justice (RTC) ⚖️", lat: 13.9161, lng: 122.1007, type: "Government", desc: "Gumaca Hall of Justice - Regional Trial Court, Gumaca" },
   { name: "McDonald's Gumaca 🍟🍔", lat: 13.920751, lng: 122.100299, type: "Restaurant", desc: "Fast Food Restaurant, Maharlika Highway / Poblacion" },
   { name: "Chowking Gumaca 🥢🥟", lat: 13.920489, lng: 122.098769, type: "Restaurant", desc: "Fast Food Restaurant, Maharlika Highway / Poblacion" },
