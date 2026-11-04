@@ -15,6 +15,11 @@ import SchoolEditingSystem from "./SchoolEditingSystem";
 import StreetInfoPanel from "./StreetInfoPanel";
 import SearchResults from "./SearchResults";
 import ArrowMarkersSystem from "./ArrowMarkersSystem";
+import BarangayBoundarySystem, {
+  loadBarangayPolygons,
+  normalizeBarangayId,
+  type BarangayPolygonsMap,
+} from "./BarangayBoundarySystem";
 
 interface NeighborhoodMapProps {
   properties: Property[];
@@ -149,6 +154,9 @@ export default function NeighborhoodMap({
   const [activeSchoolRouteFilter, setActiveSchoolRouteFilter] = useState<string>("all");
   const [dismissedSchoolId, setDismissedSchoolId] = useState<string | null>(null);
 
+  // Barangay boundary state
+  const [barangayPolygons] = useState<BarangayPolygonsMap>(() => loadBarangayPolygons());
+  const [highlightedBarangayId, setHighlightedBarangayId] = useState<string | null>(null);
   // System box state
   const [systemTab, setSystemTab] = useState<"edit" | "add">("edit");
   const [newSchoolName, setNewSchoolName] = useState("");
@@ -388,6 +396,8 @@ export default function NeighborhoodMap({
     };
   }, []);
 
+
+
   // Selected property card effect
   useEffect(() => {
     if (selectedProperty) {
@@ -622,7 +632,23 @@ export default function NeighborhoodMap({
     gpsSafetyTimerRef.current = setTimeout(finishLocating, 45000);
   };
 
-  const searchResults = createSearchLocations(properties).filter(item =>
+  // Build search results — static locations + dynamically saved barangay polygons
+  const savedBarangaySearchEntries = Object.entries(barangayPolygons).map(([, poly]) => {
+    // Compute centroid of polygon as the "location" for panning
+    const avgLat = poly.vertices.reduce((s, [lat]) => s + lat, 0) / poly.vertices.length;
+    const avgLng = poly.vertices.reduce((s, [, lng]) => s + lng, 0) / poly.vertices.length;
+    return {
+      name: `📍 ${poly.name}`,
+      lat: avgLat,
+      lng: avgLng,
+      detail: `Barangay Boundary — Gumaca, Quezon`,
+    };
+  });
+
+  const searchResults = [
+    ...createSearchLocations(properties),
+    ...savedBarangaySearchEntries,
+  ].filter(item =>
     searchQuery.trim() ? (
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.detail.toLowerCase().includes(searchQuery.toLowerCase())
@@ -687,7 +713,24 @@ export default function NeighborhoodMap({
         showSearchResults={showSearchResults}
         setShowSearchResults={setShowSearchResults}
         setSearchQuery={setSearchQuery}
-        triggerArrowHighlight={triggerArrowHighlight}
+        triggerArrowHighlight={(lat, lng, title, desc, zoom) => {
+          // If this is a barangay result, highlight its polygon instead of arrow
+          const isBarangay = title.includes("Barangay") || title.includes("Brgy.");
+          const brgyId = normalizeBarangayId(title);
+          if (isBarangay && barangayPolygons[brgyId]) {
+            setHighlightedBarangayId(brgyId);
+            // Boundary stays visible until user searches something else
+            // Fit map to the polygon bounds
+            const poly = barangayPolygons[brgyId];
+            if (poly && poly.vertices.length >= 3) {
+              const bounds = L.latLngBounds(poly.vertices.map(([la, lo]) => [la, lo] as [number, number]));
+              leafletMapRef.current?.flyToBounds(bounds, { padding: [50, 50], duration: 1.0 });
+            }
+          } else {
+            setHighlightedBarangayId(null);
+            triggerArrowHighlight(lat, lng, title, desc, zoom);
+          }
+        }}
         panToArea={panToArea}
         setClickedStreet={setClickedStreet}
       />
@@ -790,6 +833,13 @@ export default function NeighborhoodMap({
         panToArea={panToArea}
         getMatchScore={getMatchScore}
         onOpenDetails={onOpenDetails}
+      />
+
+      {/* Barangay Boundary System — render only, no editor UI */}
+      <BarangayBoundarySystem
+        map={leafletMapRef.current}
+        polygons={barangayPolygons}
+        highlightId={highlightedBarangayId}
       />
 
       {/* Quick Jump Buttons (Fullscreen) */}
