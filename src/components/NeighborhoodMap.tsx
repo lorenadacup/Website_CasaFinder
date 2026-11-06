@@ -28,6 +28,7 @@ interface NeighborhoodMapProps {
   onOpenDetails?: (property: Property) => void;
   aiMatches?: AiMatch[];
   selectedSchoolId?: string;
+  showNotif?: (opts: { type: "success"|"error"|"warning"|"info"; title: string; message: string }) => void;
 }
 
 // Convert percentage coordinates or fallback to real Gumaca Lat/Lng
@@ -69,7 +70,7 @@ const createSearchLocations = (properties: Property[]) => [
   { name: "EastWest Rural Bank 🏦", lat: 13.9205, lng: 122.0982, detail: "Bank, Poblacion, Gumaca" },
   { name: "J&T Express 📦", lat: 13.9200, lng: 122.0975, detail: "Courier & Delivery, Poblacion, Gumaca" },
   { name: "Mercury Drug 💊", lat: 13.9211, lng: 122.1013, detail: "Pharmacy, A. Bonifacio St., Gumaca" },
-  { name: "Mr. DIY 🔧", lat: 13.9210, lng: 122.1022, detail: "Hardware & Home Store, Gumaca" },
+  { name: "Mr. DIY 🔧", lat: 13.9210, lng: 122.1023, detail: "Hardware & Home Store, Gumaca" },
   { name: "BFP Gumaca 🚒", lat: 13.9210, lng: 122.0981, detail: "Bureau of Fire Protection - Gumaca Fire Station" },
   { name: "Police Outpost 👮", lat: 13.9208, lng: 122.1014, detail: "Police Outpost, A. Bonifacio St., Gumaca" },
   { name: "Gumaca City Coast 🌊", lat: 13.9210, lng: 122.1031, detail: "Gumaca City Coast, A. Bonifacio St., Gumaca" },
@@ -111,7 +112,8 @@ export default function NeighborhoodMap({
   onSelectProperty,
   onOpenDetails,
   aiMatches,
-  selectedSchoolId
+  selectedSchoolId,
+  showNotif,
 }: NeighborhoodMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -501,7 +503,7 @@ export default function NeighborhoodMap({
 
   const handleLocateUser = () => {
     if (!navigator.geolocation) {
-      alert("Hindi supported ng iyong browser ang Geolocation.");
+      showNotif?.({ type: "error", title: "GPS Not Supported", message: "Hindi supported ng iyong browser ang Geolocation." });
       return;
     }
     setIsLocatingUser(true);
@@ -623,7 +625,7 @@ export default function NeighborhoodMap({
       updateMap,
       () => {
         finishLocating();
-        alert("Hindi makuha ang iyong lokasyon. Siguraduhing pinayagan ang Location Permission sa iyong browser.");
+        showNotif?.({ type: "warning", title: "Location Not Found", message: "Hindi makuha ang iyong lokasyon. Siguraduhing pinayagan ang Location Permission sa iyong browser." });
       },
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );

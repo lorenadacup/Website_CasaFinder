@@ -37,7 +37,7 @@ export const GUMACA_LANDMARKS = [
   { name: "EastWest Rural Bank 🏦", lat: 13.9205, lng: 122.0982, type: "Bank", desc: "EastWest Rural Bank, Poblacion, Gumaca" },
   { name: "J&T Express 📦", lat: 13.9200, lng: 122.0975, type: "Courier", desc: "J&T Express Courier & Delivery, Poblacion, Gumaca" },
   { name: "Mercury Drug 💊", lat: 13.9211, lng: 122.1013, type: "Pharmacy", desc: "Mercury Drug Pharmacy, A. Bonifacio St., Gumaca" },
-  { name: "Mr. DIY 🔧", lat: 13.9210, lng: 122.1022, type: "Shopping", desc: "Mr. DIY Hardware & Home Store, Gumaca" },
+  { name: "Mr. DIY 🔧", lat: 13.9210, lng: 122.1023, type: "Shopping", desc: "Mr. DIY Hardware & Home Store, Gumaca" },
   { name: "BFP Gumaca 🚒", lat: 13.9210, lng: 122.0981, type: "Government", desc: "Bureau of Fire Protection - Gumaca Fire Station, Gumaca" },
   { name: "Police Outpost 👮", lat: 13.9208, lng: 122.1014, type: "Government", desc: "Police Outpost, A. Bonifacio St., Gumaca" },
   { name: "Gumaca City Coast 🌊", lat: 13.9210, lng: 122.1031, type: "Landmark", desc: "Gumaca City Coast, A. Bonifacio St., Gumaca" },

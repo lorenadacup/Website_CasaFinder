@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import emailjs from "@emailjs/browser";
 import { Property } from "./data/properties";
 import { studentDemoProperties } from "./data/studentDemos";
 import PropertyCard from "./components/PropertyCard";
@@ -11,6 +12,7 @@ import AboutModal from "./components/AboutModal";
 import NeighborhoodMap from "./components/NeighborhoodMap";
 import { PostingLocationMap, getNeighborhoodDefaultLatLng } from "./components/PostingLocationMap";
 import LoadingSpinner, { LoadingOverlay, CardSkeleton } from "./components/LoadingSpinner";
+import AppNotification, { type NotifOptions } from "./components/AppNotification";
 import { getTranslation, Language } from "./utils/translations";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -136,12 +138,16 @@ const DEFAULT_DEMO_USERS = [
 ];
 
 export default function App() {
+  // ── Notification system ──────────────────────────────────────────────────
+  const [activeNotif, setActiveNotif] = useState<NotifOptions | null>(null);
+  const showNotif = (opts: NotifOptions) => setActiveNotif(opts);
+
   // Loading and Authentication States
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot" | "adminLogin">("login");
 
-  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(() => {
+  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(() => {
     const saved = localStorage.getItem("casafinder_registered_users");
     if (saved) {
       try {
@@ -203,6 +209,11 @@ export default function App() {
   // Forgot Password States
   const [forgotQuery, setForgotQuery] = useState("");
   const [forgotFoundUser, setForgotFoundUser] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; facebook?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; permitNo?: string; permitFile?: string; permitStatus?: string } | null>(null);
+  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const [forgotOtpCode, setForgotOtpCode] = useState("");
+  const [forgotOtpEntered, setForgotOtpEntered] = useState("");
+  const [forgotOtpVerified, setForgotOtpVerified] = useState(false);
+  const [forgotOtpSending, setForgotOtpSending] = useState(false);
   const [forgotNewPassword, setForgotNewPassword] = useState("");
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
@@ -349,6 +360,7 @@ export default function App() {
   const [adminTabFilter, setAdminTabFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [adminView, setAdminView] = useState<"listings" | "accounts" | "analytics" | "activitylog">("listings");
   const [showLandlordPendingOnly, setShowLandlordPendingOnly] = useState(false);
+  const [adminAccountRoleFilter, setAdminAccountRoleFilter] = useState<"all" | "student" | "landlord" | "admin">("all");
   const [showLandlordBoard, setShowLandlordBoard] = useState(true);
   // Bulk selection for landlord accounts
   const [selectedLandlords, setSelectedLandlords] = useState<string[]>([]);
@@ -838,6 +850,38 @@ export default function App() {
     } else {
       setLoginError("");
       setForgotFoundUser(found);
+      // Auto-send OTP after finding account
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      setForgotOtpCode(otp);
+      setForgotOtpSent(false);
+      setForgotOtpVerified(false);
+      setForgotOtpEntered("");
+      if (found.email) {
+        setForgotOtpSending(true);
+        const expiry = new Date(Date.now() + 10 * 60000);
+        emailjs.send(
+          import.meta.env.VITE_EMAILJS_SERVICE_ID,
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+          {
+            to_email: found.email,
+            to_name: found.name,
+            passcode: otp,
+            time: expiry.toLocaleTimeString(),
+          },
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+        ).then(() => {
+          setForgotOtpSent(true);
+          setForgotOtpSending(false);
+          setLoginError("");
+        }).catch(() => {
+          setForgotOtpSending(false);
+          setLoginError("Failed to send OTP email. Please try again.");
+          setForgotFoundUser(null);
+        });
+      } else {
+        // No email — demo OTP shown on screen
+        setForgotOtpSent(true);
+      }
     }
   };
 
@@ -863,19 +907,19 @@ export default function App() {
 
     const updatedUsers = registeredUsers.map(u => {
       if (u.username === forgotFoundUser.username) {
-        return {
-          ...u,
-          password: forgotNewPassword.trim()
-        };
+        return { ...u, password: forgotNewPassword.trim() };
       }
       return u;
     });
 
     setRegisteredUsers(updatedUsers);
     localStorage.setItem("casafinder_registered_users", JSON.stringify(updatedUsers));
-
     setForgotSuccessMsg("Successfully reset your password! You can now log in with your new password.");
     setLoginError("");
+    setForgotOtpSent(false);
+    setForgotOtpVerified(false);
+    setForgotOtpCode("");
+    setForgotOtpEntered("");
   };
 
   // Handle direct Quick Demo logins
@@ -1189,7 +1233,7 @@ export default function App() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 12 * 1024 * 1024) {
-        alert("Image size exceeds 12MB. Please choose a smaller file.");
+        showNotif({ type: "error", title: "Image Too Large", message: "Image size exceeds 12MB. Please choose a smaller file." });
         return;
       }
       const reader = new FileReader();
@@ -1226,11 +1270,16 @@ export default function App() {
   const handleAddPropertySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newPrice || !newAddress.trim()) {
-      alert("Please fill in the Title, Price, and Address for your Boarding House or Apartment!");
+      showNotif({ type: "warning", title: "Incomplete Details", message: "Please fill in the Title, Price, and Address for your Boarding House or Apartment!" });
       return;
     }
 
-    const finalImage = newImageUrl || IMAGE_PRESETS[0].url;
+    if (!newImageUrl) {
+      showNotif({ type: "warning", title: "Photo Required 📸", message: "Please add a photo of your property before posting!\n\nA photo helps attract more student tenants." });
+      return;
+    }
+
+    const finalImage = newImageUrl;
 
     // Parse coordinates if landlord selected pin or used GPS on Map
     let finalLat = 13.9232;
@@ -1315,11 +1364,13 @@ export default function App() {
     setShowAddModal(false);
 
     if (userSession?.role !== "admin") {
-      alert(
-        prefLanguage === "tagalog"
-          ? "⏳ Matagumpay na naipasa ang iyong post!\n\nNakatambay ito sa ADMIN APPROVAL at HINDI MUNA LALABAS SA WEBSITE hangga't hindi ito inaaprubahan ng Admin."
-          : "⏳ Your listing has been submitted!\n\nIt is pending ADMIN APPROVAL and will NOT appear on the public website until an Admin approves it."
-      );
+      showNotif({
+        type: "info",
+        title: prefLanguage === "tagalog" ? "⏳ Naipasa na ang iyong Post!" : "⏳ Listing Submitted!",
+        message: prefLanguage === "tagalog"
+          ? "Nakatambay ito sa ADMIN APPROVAL at HINDI MUNA LALABAS SA WEBSITE hangga't hindi ito inaaprubahan ng Admin."
+          : "Your listing is pending ADMIN APPROVAL and will NOT appear on the public website until an Admin approves it.",
+      });
     }
   };
 
@@ -1347,20 +1398,20 @@ export default function App() {
       return p;
     }));
     logActivity("Approved listing", prop?.title || id, "approve");
-    alert(prefLanguage === "tagalog" ? "✅ Na-approve na ang listing! Lalabas na ito sa pampublikong website." : "✅ Listing Approved! It will now appear on the public website.");
+    showNotif({ type: "success", title: "✅ Listing Approved!", message: prefLanguage === "tagalog" ? "Na-approve na ang listing! Lalabas na ito sa pampublikong website." : "Listing approved! It will now appear on the public website." });
   };
 
   // Admin action: Reject listing
-  const handleRejectProperty = (id: string) => {
+  const handleRejectProperty = (id: string, reason?: string) => {
     const prop = propertiesList.find(p => p.id === id);
     setPropertiesList(prev => prev.map(p => {
       if (p.id === id) {
-        return { ...p, approvalStatus: "rejected" as const };
+        return { ...p, approvalStatus: "rejected" as const, rejectionReason: reason || "" };
       }
       return p;
     }));
     logActivity("Rejected listing", prop?.title || id, "reject");
-    alert(prefLanguage === "tagalog" ? "❌ Na-reject ang listing." : "❌ Listing Rejected.");
+    showNotif({ type: "error", title: "❌ Listing Rejected", message: prefLanguage === "tagalog" ? "Na-reject ang listing." : "The listing has been rejected." });
   };
 
   // Admin action: Approve landlord account
@@ -1376,15 +1427,40 @@ export default function App() {
   };
 
   // Admin action: Reject landlord account + hide all their listings from public view
-  const handleRejectLandlordAccount = (username: string) => {
+  const handleRejectLandlordAccount = (username: string, reason?: string) => {
     const user = registeredUsers.find(u => u.username === username);
     setRegisteredUsers(prev => prev.map(u =>
-      u.username === username ? { ...u, accountStatus: "rejected" as const } : u
+      u.username === username ? { ...u, accountStatus: "rejected" as const, rejectionReason: reason || "" } : u
     ));
     setPropertiesList(prev => prev.map(p =>
       p.landlordUsername === username ? { ...p, approvalStatus: "rejected" as const } : p
     ));
     logActivity(`Rejected landlord account`, user?.name || username, "reject");
+  };
+
+  const handleDeleteUser = (username: string) => {
+    const user = registeredUsers.find(u => u.username === username);
+    if (!user) return;
+    if (user.username === userSession?.username) {
+      showNotif({ type: "error", title: "Cannot Delete", message: "Hindi mo matatanggal ang sarili mong account." });
+      return;
+    }
+    if (user.role === "admin") {
+      showNotif({ type: "error", title: "Cannot Delete Admin", message: "Hindi pwedeng tanggalin ang admin accounts." });
+      return;
+    }
+    showNotif({
+      type: "error",
+      title: "Delete Account?",
+      message: `Permanenteng matatanggal ang account ni ${user.name} (@${user.username}). Hindi ito mababawi.`,
+      confirmLabel: "Yes, Delete",
+      cancelLabel: "Cancel",
+      onConfirm: () => {
+        setRegisteredUsers(prev => prev.filter(u => u.username !== username));
+        logActivity(`Deleted user account`, user.name || username, "reject");
+        showNotif({ type: "success", title: "Account Deleted", message: `Na-delete na ang account ni ${user.name} (@${user.username}).` });
+      },
+    });
   };
 
   // Student rating & review handler
@@ -1836,8 +1912,52 @@ export default function App() {
                         className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all" />
                     </div>
                     <button type="submit" className="w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
-                      <Search className="h-4 w-4" /> Find Account
+                      <Search className="h-4 w-4" /> {forgotOtpSending ? "Sending OTP..." : "Find Account"}
                     </button>
+                  </form>
+                ) : !forgotOtpVerified ? (
+                  <form onSubmit={e => {
+                    e.preventDefault();
+                    if (forgotOtpEntered.trim() === forgotOtpCode) {
+                      setForgotOtpVerified(true);
+                      setLoginError("");
+                    } else {
+                      setLoginError("Invalid OTP code. Please check and try again.");
+                    }
+                  }} className="space-y-4">
+                    <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-white font-bold shrink-0">{forgotFoundUser.name.charAt(0)}</div>
+                      <div>
+                        <p className="text-sm font-bold text-stone-800">{forgotFoundUser.name}</p>
+                        <p className="text-xs text-stone-500 font-mono">@{forgotFoundUser.username}</p>
+                      </div>
+                    </div>
+                    {forgotFoundUser.email ? (
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-indigo-800">
+                        📧 OTP sent to <strong>{forgotFoundUser.email.replace(/(.{2}).*(@.*)/, "$1***$2")}</strong>. Check your inbox.
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1.5">
+                        <p className="font-bold flex items-center gap-1.5">📱 Demo SMS OTP
+                          <span className="bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded text-[9px] font-black">FOR TESTING ONLY</span>
+                        </p>
+                        <p className="text-[10px] text-amber-600">Real SMS not yet available. Use this code to reset your password:</p>
+                        <p className="font-mono text-2xl font-black text-amber-900 tracking-[0.4em] text-center py-1">{forgotOtpCode}</p>
+                        <p className="text-[10px] text-amber-600">Would have been sent to: {forgotFoundUser.mobile?.replace(/(\d{4})\d+(\d{2})/, "$1****$2")}</p>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Enter OTP Code</label>
+                      <input type="text" required maxLength={6} placeholder="000000" value={forgotOtpEntered} onChange={e => setForgotOtpEntered(e.target.value.replace(/\D/g, ""))}
+                        className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500 focus:bg-white rounded-xl px-4 py-3 text-lg text-center font-mono text-stone-800 tracking-[0.5em] placeholder-stone-300 focus:outline-none transition-all" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => { setForgotFoundUser(null); setForgotOtpSent(false); setForgotOtpVerified(false); setForgotOtpEntered(""); setLoginError(""); }}
+                        className="px-4 py-3 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 text-sm font-semibold rounded-xl cursor-pointer">Back</button>
+                      <button type="submit" className="flex-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-bold py-3 rounded-xl text-sm cursor-pointer active:scale-[0.98]">
+                        Verify OTP ✓
+                      </button>
+                    </div>
                   </form>
                 ) : (
                   <form onSubmit={handleResetForgotPassword} className="space-y-4">
@@ -1871,7 +1991,7 @@ export default function App() {
                     </div>
                   </form>
                 )}
-                <button type="button" onClick={() => { setAuthMode("login"); setLoginError(""); setForgotFoundUser(null); setForgotQuery(""); }}
+                <button type="button" onClick={() => { setAuthMode("login"); setLoginError(""); setForgotFoundUser(null); setForgotQuery(""); setForgotOtpSent(false); setForgotOtpVerified(false); setForgotOtpCode(""); setForgotOtpEntered(""); }}
                   className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors cursor-pointer mx-auto">
                   <ArrowLeft className="h-3.5 w-3.5" /> Back to login
                 </button>
@@ -2002,6 +2122,7 @@ export default function App() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#faf9f6] dark:bg-black text-stone-900 dark:text-stone-100 font-sans flex flex-col antialiased">
       {/* Dynamic Header Navigation */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-4 sm:px-6 py-3 sm:py-4 shadow-xs">
@@ -2457,8 +2578,24 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Bulk actions bar */}
-                {registeredUsers.filter(u => u.role === "landlord").length > 0 && (
+                {/* Role filter tabs */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {([
+                    { key: "all", label: `All (${registeredUsers.length})` },
+                    { key: "student", label: `Students (${registeredUsers.filter(u => u.role === "student").length})` },
+                    { key: "landlord", label: `Landlords (${registeredUsers.filter(u => u.role === "landlord").length})` },
+                    { key: "admin", label: `Admins (${registeredUsers.filter(u => u.role === "admin").length})` },
+                  ] as const).map(({ key, label }) => (
+                    <button key={key} type="button"
+                      onClick={() => setAdminAccountRoleFilter(key)}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${adminAccountRoleFilter === key ? "bg-indigo-600 text-white border-indigo-500" : "bg-white/5 text-stone-400 border-white/10 hover:bg-white/10 hover:text-white"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Bulk actions bar — landlords only */}
+                {adminAccountRoleFilter === "landlord" && registeredUsers.filter(u => u.role === "landlord").length > 0 && (
                   <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-white/10">
                     <button type="button"
                       onClick={() => {
@@ -2486,42 +2623,56 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Accounts list */}
-                {registeredUsers.filter(u => u.role === "landlord").length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="text-stone-500 text-xs italic">No landlord accounts registered yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5">
-                    {registeredUsers.filter(u => u.role === "landlord").map(u => {
-                      const status = u.accountStatus || "pending";
-                      const isSelected = selectedLandlords.includes(u.username);
-                      return (
-                        <div key={u.username} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all ${isSelected ? "ring-2 ring-amber-500/50" : ""} ${status === "pending"
-                          ? "bg-amber-500/5 border-amber-500/20"
-                          : status === "rejected"
-                            ? "bg-red-500/5 border-red-500/20"
-                            : "bg-white/5 border-white/10"
-                          }`}>
-                          {/* Checkbox */}
-                          <input type="checkbox" checked={isSelected}
-                            onChange={() => setSelectedLandlords(prev => prev.includes(u.username) ? prev.filter(x => x !== u.username) : [...prev, u.username])}
-                            className="w-4 h-4 accent-amber-500 cursor-pointer shrink-0" />
-                          {/* Clickable left section — opens profile */}
-                          <button type="button" onClick={() => setAdminViewLandlord(u)}
-                            className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity cursor-pointer">
-                            <div className="h-10 w-10 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                              {u.avatar && (u.avatar.startsWith("data:image/") || u.avatar.startsWith("http")) ? (
-                                <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <span>{u.avatar || u.name.charAt(0)}</span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-white truncate">{u.name}</p>
-                              <p className="text-[10px] text-stone-400 font-mono truncate">@{u.username}{u.mobile ? ` · ${u.mobile}` : ""}</p>
-                            </div>
-                          </button>
+                {/* Users list */}
+                {(() => {
+                  const filtered = registeredUsers.filter(u =>
+                    adminAccountRoleFilter === "all" ? true : u.role === adminAccountRoleFilter
+                  );
+                  if (filtered.length === 0) return (
+                    <div className="py-8 text-center">
+                      <p className="text-stone-500 text-xs italic">No users found.</p>
+                    </div>
+                  );
+                  return (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
+                      {filtered.map(u => {
+                        const status = u.accountStatus || "pending";
+                        const isSelected = selectedLandlords.includes(u.username);
+                        const roleBadge = u.role === "admin" ? "bg-violet-500/20 text-violet-300 border-violet-500/30"
+                          : u.role === "landlord" ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                          : "bg-sky-500/20 text-sky-300 border-sky-500/30";
+                        return (
+                          <div key={u.username} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all ${isSelected ? "ring-2 ring-amber-500/50" : ""} ${status === "pending" && u.role === "landlord"
+                            ? "bg-amber-500/5 border-amber-500/20"
+                            : status === "rejected"
+                              ? "bg-red-500/5 border-red-500/20"
+                              : "bg-white/5 border-white/10"
+                            }`}>
+                            {/* Checkbox — landlords only */}
+                            {u.role === "landlord" && (
+                              <input type="checkbox" checked={isSelected}
+                                onChange={() => setSelectedLandlords(prev => prev.includes(u.username) ? prev.filter(x => x !== u.username) : [...prev, u.username])}
+                                className="w-4 h-4 accent-amber-500 cursor-pointer shrink-0" />
+                            )}
+                            {/* Avatar + info */}
+                            <button type="button" onClick={() => u.role === "landlord" ? setAdminViewLandlord(u) : null}
+                              className={`flex items-center gap-3 flex-1 min-w-0 text-left transition-opacity ${u.role === "landlord" ? "hover:opacity-80 cursor-pointer" : "cursor-default"}`}>
+                              <div className="h-10 w-10 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                {u.avatar && (u.avatar.startsWith("data:image/") || u.avatar.startsWith("http")) ? (
+                                  <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{u.avatar || u.name.charAt(0)}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-xs font-bold text-white truncate">{u.name}</p>
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${roleBadge} capitalize`}>{u.role}</span>
+                                </div>
+                                <p className="text-[10px] text-stone-400 font-mono truncate">@{u.username}{u.email ? ` · ${u.email}` : ""}</p>
+                                {u.mobile && <p className="text-[10px] text-stone-500 truncate">{u.mobile}</p>}
+                              </div>
+                            </button>
                           <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border ${status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                             : status === "rejected" ? "bg-red-500/15 text-red-400 border-red-500/30"
                               : "bg-amber-500/15 text-amber-400 border-amber-500/30"
@@ -2535,18 +2686,38 @@ export default function App() {
                                 Approve
                               </button>
                             )}
-                            {status !== "rejected" && (
-                              <button type="button" onClick={() => handleRejectLandlordAccount(u.username)}
+                            {status !== "rejected" && u.role === "landlord" && (
+                              <button type="button" onClick={() => {
+                                showNotif({
+                                  type: "error",
+                                  title: "Reject Account?",
+                                  message: `Account: ${u.name} (@${u.username})`,
+                                  inputLabel: "Reason for rejection",
+                                  inputPlaceholder: "e.g. Incomplete documents, invalid permits...",
+                                  inputRequired: true,
+                                  confirmLabel: "Reject",
+                                  cancelLabel: "Cancel",
+                                  onConfirm: (reason) => handleRejectLandlordAccount(u.username, reason),
+                                });
+                              }}
                                 className="px-2.5 py-1.5 bg-white/5 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-bold rounded-lg transition-all cursor-pointer active:scale-95">
                                 Reject
+                              </button>
+                            )}
+                            {u.role !== "admin" && u.username !== userSession?.username && (
+                              <button type="button" onClick={() => handleDeleteUser(u.username)}
+                                className="px-2.5 py-1.5 bg-white/5 hover:bg-red-700/40 text-red-400 border border-red-700/30 text-[11px] font-bold rounded-lg transition-all cursor-pointer active:scale-95"
+                                title="Delete account">
+                                🗑️
                               </button>
                             )}
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -2700,6 +2871,15 @@ export default function App() {
                       ? "Hindi ka makakapag-post ng listing. Makipag-ugnayan sa Admin para sa karagdagang impormasyon."
                       : "You cannot post listings. Please contact the LGU Housing Admin for more information."}
                   </p>
+                  {(() => {
+                    const reason = registeredUsers.find(u => u.username === userSession?.username)?.rejectionReason;
+                    return reason ? (
+                      <div className="mt-2 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl px-3 py-2">
+                        <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-0.5">Reason:</p>
+                        <p className="text-xs text-red-800 dark:text-red-300">{reason}</p>
+                      </div>
+                    ) : null;
+                  })()}
                 </>
               ) : (
                 <>
@@ -2911,7 +3091,19 @@ export default function App() {
                     setDetailModalProperty(property);
                   }}
                   onApprove={(p) => handleApproveProperty(p.id)}
-                  onReject={(p) => handleRejectProperty(p.id)}
+                  onReject={(p) => {
+                    showNotif({
+                      type: "error",
+                      title: "Reject Listing?",
+                      message: `Listing: "${p.title}"`,
+                      inputLabel: "Reason for rejection",
+                      inputPlaceholder: "e.g. Incomplete information, invalid photos...",
+                      inputRequired: true,
+                      confirmLabel: "Reject",
+                      cancelLabel: "Cancel",
+                      onConfirm: (reason) => handleRejectProperty(p.id, reason),
+                    });
+                  }}
                   onViewLandlordProfile={(prop) => setLandlordProfileProperty(prop)}
                   onViewOnMap={handleViewOnMap}
                   currentUserRole={userSession?.role}
@@ -2971,7 +3163,7 @@ export default function App() {
                   />
                 ))}
 
-                {/* Top Row: Step Badge */}
+                {/* Top Row: Step Badge + Skip */}
                 <div className="flex items-center justify-between relative z-10 mb-4">
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
@@ -2987,6 +3179,16 @@ export default function App() {
                       }
                     </span>
                   </motion.div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem(`casafinder_onboarded_${userSession.username}`, "true");
+                      setShowOnboardingModal(false);
+                    }}
+                    className="ml-auto text-[11px] font-semibold text-white/60 hover:text-white/90 transition-colors cursor-pointer px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/10"
+                  >
+                    {prefLanguage === "tagalog" ? "Laktawan ➜" : "Skip ➜"}
+                  </button>
                 </div>
 
                 {/* Hero Icon & Title Header */}
@@ -3309,7 +3511,7 @@ export default function App() {
                             </div>
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0]; if (!file) return;
-                              if (file.size > 5 * 1024 * 1024) { alert("Image too large. Max 5MB."); return; }
+                              if (file.size > 5 * 1024 * 1024) { showNotif({ type: "error", title: "Image Too Large", message: "Image too large. Max 5MB." }); return; }
                               const reader = new FileReader();
                               reader.onload = (evt) => { if (evt.target?.result) setOnboardingAvatar(evt.target.result as string); };
                               reader.readAsDataURL(file);
@@ -3324,7 +3526,7 @@ export default function App() {
                             <Upload className="h-3 w-3" /> <span>Upload Photo</span>
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0]; if (!file) return;
-                              if (file.size > 5 * 1024 * 1024) { alert("Image too large. Max 5MB."); return; }
+                              if (file.size > 5 * 1024 * 1024) { showNotif({ type: "error", title: "Image Too Large", message: "Image too large. Max 5MB." }); return; }
                               const reader = new FileReader();
                               reader.onload = (evt) => { if (evt.target?.result) setOnboardingAvatar(evt.target.result as string); };
                               reader.readAsDataURL(file);
@@ -4010,7 +4212,14 @@ export default function App() {
                       type="number"
                       min="1"
                       value={newBeds}
-                      onChange={e => setNewBeds(Number(e.target.value))}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === "" || val === "0") setNewBeds("" as any);
+                        else setNewBeds(Math.max(1, Number(val)));
+                      }}
+                      onBlur={e => {
+                        if (!e.target.value || Number(e.target.value) < 1) setNewBeds(1);
+                      }}
                       className="bg-stone-50 border border-stone-200 rounded-xl px-2 py-1.5 sm:py-2 text-xs text-stone-800 focus:outline-hidden focus:border-indigo-500 focus:bg-white font-mono"
                     />
                   </div>
@@ -4023,7 +4232,14 @@ export default function App() {
                       type="number"
                       min="1"
                       value={newBaths}
-                      onChange={e => setNewBaths(Number(e.target.value))}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === "" || val === "0") setNewBaths("" as any);
+                        else setNewBaths(Math.max(1, Number(val)));
+                      }}
+                      onBlur={e => {
+                        if (!e.target.value || Number(e.target.value) < 1) setNewBaths(1);
+                      }}
                       className="bg-stone-50 border border-stone-200 rounded-xl px-2 py-1.5 sm:py-2 text-xs text-stone-800 focus:outline-hidden focus:border-indigo-500 focus:bg-white font-mono"
                     />
                   </div>
@@ -4426,6 +4642,7 @@ export default function App() {
                       setDetailModalProperty(prop);
                     }}
                     selectedSchoolId={selectedSchoolIdForMap}
+                    showNotif={showNotif}
                   />
                 </div>
               </div>
@@ -4676,7 +4893,7 @@ export default function App() {
                               const file = e.target.files?.[0];
                               if (!file) return;
                               if (file.size > 5 * 1024 * 1024) {
-                                alert(prefLanguage === "tagalog" ? "Masyadong malaki ang larawan. Pumili ng mas mababa sa 5MB." : "Image too large. Select under 5MB.");
+                                showNotif({ type: "error", title: "Image Too Large", message: prefLanguage === "tagalog" ? "Masyadong malaki ang larawan. Pumili ng mas mababa sa 5MB." : "Image too large. Select under 5MB." });
                                 return;
                               }
                               const reader = new FileReader();
@@ -5449,6 +5666,47 @@ export default function App() {
                         </button>
                       )}
                     </div>
+
+                    {/* Danger Zone — Delete Account */}
+                    <div className="p-3.5 bg-red-50/80 dark:bg-red-950/30 border border-red-200/80 dark:border-red-800/60 rounded-2xl space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">⚠️</span>
+                        <div>
+                          <p className="text-xs font-bold text-red-700 dark:text-red-300">
+                            {prefLanguage === "tagalog" ? "Danger Zone — Burahin ang Account" : "Danger Zone — Delete Account"}
+                          </p>
+                          <p className="text-[10px] text-red-500 dark:text-red-400 leading-tight mt-0.5">
+                            {prefLanguage === "tagalog"
+                              ? "Permanenteng matatanggal ang iyong account. Hindi ito mababawi."
+                              : "Permanently deletes your account. This cannot be undone."}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          showNotif({
+                            type: "error",
+                            title: prefLanguage === "tagalog" ? "⚠️ Burahin ang Account?" : "⚠️ Delete Account?",
+                            message: prefLanguage === "tagalog"
+                              ? "Permanenteng matatanggal ang iyong account. Hindi ito mababawi."
+                              : "This will permanently delete your account. This cannot be undone.",
+                            confirmLabel: prefLanguage === "tagalog" ? "Oo, Burahin" : "Yes, Delete",
+                            cancelLabel: prefLanguage === "tagalog" ? "Huwag" : "Cancel",
+                            onConfirm: () => {
+                              const username = userSession?.username;
+                              setRegisteredUsers(prev => prev.filter(u => u.username !== username));
+                              setUserSession(null);
+                              localStorage.removeItem("casafinder_user_session");
+                              localStorage.removeItem("casafinder_active_sessions");
+                            },
+                          });
+                        }}
+                        className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        🗑️ {prefLanguage === "tagalog" ? "Burahin ang Aking Account" : "Delete My Account"}
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -5592,5 +5850,9 @@ export default function App() {
       </AnimatePresence>
 
     </div>
+
+    {/* Global notification modal */}
+    <AppNotification notif={activeNotif} onClose={() => setActiveNotif(null)} />
+    </>
   );
 }

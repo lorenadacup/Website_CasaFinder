@@ -87,7 +87,7 @@ export default function PropertyCard({
           )}
           {property.approvalStatus === "rejected" && (
             <span className="rounded-full bg-red-600/90 text-white font-bold px-3 py-1.5 text-[9px] sm:text-[10px] shadow-lg border border-red-400">
-              ❌ Rejected
+              ❌ Rejected{property.rejectionReason ? `: ${property.rejectionReason}` : ""}
             </span>
           )}
           <span className="rounded-full bg-stone-900/90 backdrop-blur-md px-3 py-1.5 text-[9px] sm:text-[10px] font-bold text-white shadow-lg border border-white/30">
