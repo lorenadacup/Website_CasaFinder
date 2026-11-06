@@ -45,6 +45,7 @@ export default function PropertyModal({
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Reply state
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
@@ -84,6 +85,7 @@ export default function PropertyModal({
       onAddReview(property.id, rating, comment);
       setComment("");
       setSubmitted(true);
+      setAgreedToTerms(false);
       setTimeout(() => setSubmitted(false), 3000);
     }
   };
@@ -283,30 +285,61 @@ export default function PropertyModal({
   );
 
   // Render Reviews Section
-  const renderReviewsSection = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-display text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
-            {isTagalog ? "Mga Rating at Review ng Estudyante 🎓" : "Student Ratings & Reviews 🎓"}
-          </h4>
-          <p className="text-xs text-stone-500 dark:text-stone-400 font-light mt-0.5">
-            {avgRating
-              ? (isTagalog
-                  ? `${avgRating} mula sa 5 bituin (${reviews.length} ${reviews.length === 1 ? 'review' : 'mga review'})`
-                  : `${avgRating} out of 5 stars (${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'})`)
-              : (isTagalog ? "Wala pang rating. Maging una sa pag-rate!" : "No student ratings yet. Be the first to rate!")}
-          </p>
-        </div>
+  const renderReviewsSection = () => {
+    // Compute per-star breakdown
+    const starCounts = [5, 4, 3, 2, 1].map(star => ({
+      star,
+      count: reviews.filter(r => r.rating === star).length,
+    }));
 
-        {avgRating && (
-          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 px-3 py-1.5 rounded-xl text-amber-900 dark:text-amber-300 text-sm font-bold">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
-            <span>{avgRating} / 5</span>
+    return (
+    <div className="space-y-4">
+
+      {/* ── Overall Rating Summary ── */}
+      {reviews.length > 0 ? (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-2xl p-4 flex gap-5 items-center">
+          {/* Big score */}
+          <div className="text-center shrink-0">
+            <p className="text-4xl font-black text-amber-500">{avgRating}</p>
+            <div className="flex items-center justify-center gap-0.5 mt-1">
+              {[1,2,3,4,5].map(s => (
+                <Star key={s} className={`h-3.5 w-3.5 ${s <= Math.round(Number(avgRating)) ? "fill-amber-400 text-amber-400" : "text-stone-300 fill-stone-100"}`} />
+              ))}
+            </div>
+            <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 font-semibold">
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+            </p>
           </div>
-        )}
-      </div>
+          {/* Bar breakdown */}
+          <div className="flex-1 space-y-1.5">
+            {starCounts.map(({ star, count }) => (
+              <div key={star} className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 w-3 shrink-0">{star}</span>
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
+                <div className="flex-1 bg-amber-100 dark:bg-amber-900/40 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                    style={{ width: reviews.length > 0 ? `${(count / reviews.length) * 100}%` : "0%" }}
+                  />
+                </div>
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 w-4 text-right shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-display text-sm font-bold uppercase tracking-wider text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+              {isTagalog ? "Mga Rating at Review ng Estudyante 🎓" : "Student Ratings & Reviews 🎓"}
+            </h4>
+            <p className="text-xs text-stone-500 dark:text-stone-400 font-light mt-0.5">
+              {isTagalog ? "Wala pang rating. Maging una sa pag-rate!" : "No student ratings yet. Be the first to rate!"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {userSession?.role === "student" ? (
         <div className="bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-700 rounded-2xl p-4 space-y-3">
@@ -353,9 +386,25 @@ export default function PropertyModal({
                 className="w-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-2.5 text-xs text-stone-800 dark:text-stone-100 focus:outline-hidden focus:border-amber-500 resize-none font-light"
               />
 
+              {/* Agreement checkbox */}
+              <label className="flex items-start gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-amber-500 cursor-pointer shrink-0"
+                />
+                <span className="text-[11px] text-stone-600 dark:text-stone-400 leading-relaxed group-hover:text-stone-800 dark:group-hover:text-stone-200 transition-colors">
+                  {isTagalog
+                    ? "Pinapatunayan ko na ang review na ito ay batay sa aking tunay na karanasan. Hindi ako magpopost ng maling, mapanlinlang, o nakakainsultong nilalaman. Naiintindihan ko na ang mga pekeng review ay maaaring magresulta sa pagsuspinde ng aking account."
+                    : "I confirm that this review is based on my actual experience. I agree not to post false, misleading, or offensive content. I understand that fake reviews may result in account suspension."}
+                </span>
+              </label>
+
               <button
                 type="submit"
-                className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-4 rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                disabled={!agreedToTerms}
+                className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold py-2 px-4 rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <Star className="h-3.5 w-3.5 fill-white" />
                 {isTagalog ? "I-submit ang Rating ⭐️" : "Submit Student Rating ⭐️"}
@@ -505,6 +554,7 @@ export default function PropertyModal({
       </div>
     </div>
   );
+  }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-stone-900/60 backdrop-blur-md">
@@ -627,6 +677,19 @@ export default function PropertyModal({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {mobileTab === "details" && (
               <>
+                {/* Star Rating Summary */}
+                {avgRating && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`h-4 w-4 ${s <= Math.round(Number(avgRating)) ? "fill-amber-400 text-amber-400" : "text-stone-300 fill-stone-100"}`} />
+                      ))}
+                    </div>
+                    <span className="text-sm font-black text-amber-500">{avgRating}</span>
+                    <span className="text-xs text-stone-400">({reviews.length} {reviews.length === 1 ? "review" : "reviews"})</span>
+                  </div>
+                )}
+
                 <div className="relative rounded-2xl overflow-hidden aspect-video bg-stone-100 dark:bg-stone-800 border border-stone-100 dark:border-stone-800">
                   <img src={property.image} alt={property.title} className="w-full h-full object-cover" />
                 </div>
@@ -845,6 +908,19 @@ export default function PropertyModal({
                 )}
               </div>
             </div>
+
+            {/* Star Rating Summary — Desktop */}
+            {avgRating && (
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`h-5 w-5 ${s <= Math.round(Number(avgRating)) ? "fill-amber-400 text-amber-400" : "text-stone-300 fill-stone-100"}`} />
+                  ))}
+                </div>
+                <span className="text-lg font-black text-amber-500">{avgRating}</span>
+                <span className="text-sm text-stone-400">({reviews.length} {reviews.length === 1 ? "review" : "reviews"})</span>
+              </div>
+            )}
 
             {/* Hero Property Image */}
             <div className="relative rounded-2xl overflow-hidden aspect-video bg-stone-100 dark:bg-stone-800 mb-8 border border-stone-100 dark:border-stone-800 shadow-sm">

@@ -491,6 +491,7 @@ export default function App() {
   const [activeBarangay, setActiveBarangay] = useState("All");
   const [activeType, setActiveType] = useState("All");
   const [activePriceRange, setActivePriceRange] = useState("All");
+  const [activeSortBy, setActiveSortBy] = useState<"price_desc" | "price_asc" | "top_rated" | "most_reviewed">("price_desc");
   const [activeAmenityGender, setActiveAmenityGender] = useState<"All" | "Both" | "Girls Only" | "Boys Only">("All");
 
   // Loading States for UX Improvements
@@ -1652,11 +1653,26 @@ export default function App() {
       });
     }
 
-    // Sort descending by price
-    result.sort((a, b) => b.price - a.price);
+    // Sort based on activeSortBy
+    const getAvgRating = (p: typeof result[0]) => {
+      const reviews = p.reviews || [];
+      if (reviews.length === 0) return 0;
+      return reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    };
+
+    if (activeSortBy === "top_rated") {
+      result.sort((a, b) => getAvgRating(b) - getAvgRating(a));
+    } else if (activeSortBy === "most_reviewed") {
+      result.sort((a, b) => (b.reviews?.length || 0) - (a.reviews?.length || 0));
+    } else if (activeSortBy === "price_asc") {
+      result.sort((a, b) => a.price - b.price);
+    } else {
+      // price_desc (default)
+      result.sort((a, b) => b.price - a.price);
+    }
 
     return result;
-  }, [propertiesList, boardingHouseSearchQuery, barangaySearchQuery, activeBarangay, activeType, activePriceRange, activeAmenityGender, userSession, adminTabFilter, showLandlordPendingOnly]);
+  }, [propertiesList, boardingHouseSearchQuery, barangaySearchQuery, activeBarangay, activeType, activePriceRange, activeAmenityGender, userSession, adminTabFilter, showLandlordPendingOnly, activeSortBy]);
 
   if (isLoading) {
     return (
@@ -2459,9 +2475,23 @@ export default function App() {
             {/* Filter Action Button Row */}
             <div className={`flex items-center justify-between pt-1 gap-2 ${isMobileSearchExpanded ? "flex" : "hidden sm:flex"
               }`}>
-              <span className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 font-medium">
-                {t("showingResults")} <strong className="text-pink-600 dark:text-pink-400 font-bold">{processedProperties.length}</strong> {processedProperties.length === 1 ? t("boardingHouse") : t("boardingHouses")}
-              </span>
+              <div className="flex items-center gap-2">
+                {/* Sort selector */}
+                <select
+                  value={activeSortBy}
+                  onChange={e => setActiveSortBy(e.target.value as typeof activeSortBy)}
+                  className="bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-[11px] font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-pink-400 cursor-pointer"
+                >
+                  <option value="price_desc">💰 Price: High to Low</option>
+                  <option value="price_asc">💰 Price: Low to High</option>
+                  <option value="top_rated">⭐ Top Rated</option>
+                  <option value="most_reviewed">💬 Most Reviewed</option>
+                </select>
+
+                <span className="text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                  {t("showingResults")} <strong className="text-pink-600 dark:text-pink-400 font-bold">{processedProperties.length}</strong> {processedProperties.length === 1 ? t("boardingHouse") : t("boardingHouses")}
+                </span>
+              </div>
 
               <button
                 type="button"
