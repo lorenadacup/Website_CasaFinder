@@ -13,6 +13,7 @@ import NeighborhoodMap from "./components/NeighborhoodMap";
 import { PostingLocationMap, getNeighborhoodDefaultLatLng } from "./components/PostingLocationMap";
 import LoadingSpinner, { LoadingOverlay, CardSkeleton } from "./components/LoadingSpinner";
 import AppNotification, { type NotifOptions } from "./components/AppNotification";
+import NavInfoModal, { type NavInfoSection } from "./components/NavInfoModal";
 import { getTranslation, Language } from "./utils/translations";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -141,6 +142,8 @@ export default function App() {
   // ── Notification system ──────────────────────────────────────────────────
   const [activeNotif, setActiveNotif] = useState<NotifOptions | null>(null);
   const showNotif = (opts: NotifOptions) => setActiveNotif(opts);
+
+  const [navInfoSection, setNavInfoSection] = useState<NavInfoSection>(null);
 
   // Loading and Authentication States
   const [isLoading, setIsLoading] = useState(true);
@@ -2141,6 +2144,40 @@ export default function App() {
     <>
     <div className="min-h-screen bg-[#faf9f6] dark:bg-black text-stone-900 dark:text-stone-100 font-sans flex flex-col antialiased">
       {/* Dynamic Header Navigation */}
+      {/* Top Navigation Bar */}
+      <nav className="bg-gradient-to-r from-violet-900 via-purple-900 to-indigo-900 border-b border-purple-700/30 px-4 sm:px-6 py-2.5 sticky top-0 z-50 shadow-lg shadow-purple-950/40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-0.5">
+            {[
+              { label: "Home", onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+              { label: "Features", onClick: () => setNavInfoSection("features") },
+              { label: "How it works", onClick: () => setNavInfoSection("how-it-works") },
+              { label: "Who it's for", onClick: () => setNavInfoSection("who-its-for") },
+            ].map((item, i) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={item.onClick}
+                className={`px-3.5 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${
+                  i === 0
+                    ? "text-white bg-white/20 border border-white/25 shadow-sm"
+                    : "text-purple-200 hover:text-white hover:bg-white/15"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleOpenProfile}
+            className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-sm px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40"
+          >
+            {userSession.name}
+          </button>
+        </div>
+      </nav>
+
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-4 sm:px-6 py-3 sm:py-4 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
           {/* Logo & Role Subheading */}
@@ -5883,6 +5920,13 @@ export default function App() {
 
     {/* Global notification modal */}
     <AppNotification notif={activeNotif} onClose={() => setActiveNotif(null)} />
+
+    {/* Nav Info Modals */}
+    <NavInfoModal
+      section={navInfoSection}
+      onClose={() => setNavInfoSection(null)}
+      prefLanguage={prefLanguage}
+    />
     </>
   );
 }
