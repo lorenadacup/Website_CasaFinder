@@ -15,7 +15,7 @@ interface PropertyModalProps {
   onViewLandlordProfile?: (property: Property) => void;
   onViewOnMap?: (property: Property, schoolId?: string) => void;
   onViewTenantProfile?: (username: string) => void;
-  userSession?: { role: "student" | "landlord" | "admin"; name: string; username: string } | null;
+  userSession?: { role: "student" | "landlord" | "admin" | "guest"; name: string; username: string } | null;
   onAddReview?: (propertyId: string, rating: number, comment: string) => void;
   onAddReply?: (propertyId: string, reviewId: string, comment: string) => void;
   language?: Language;
@@ -176,7 +176,16 @@ export default function PropertyModal({
   );
 
   // Render Direct Contact & SMS Card
-  const renderDirectContactCard = () => (
+  const renderDirectContactCard = () => {
+    if (userSession?.role === "guest") {
+      return (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-center space-y-2">
+          <p className="text-sm font-bold text-amber-800 dark:text-amber-300">🔒 Contact Landlord</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">Sign in or create an account to contact this landlord.</p>
+        </div>
+      );
+    }
+    return (
     <div className="bg-white dark:bg-stone-850 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-stone-100 dark:border-stone-800">
@@ -283,6 +292,7 @@ export default function PropertyModal({
       </div>
     </div>
   );
+  };
 
   // Render Reviews Section
   const renderReviewsSection = () => {
@@ -341,7 +351,12 @@ export default function PropertyModal({
         </div>
       )}
 
-      {userSession?.role === "student" ? (
+      {userSession?.role === "guest" ? (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-center space-y-2">
+          <p className="text-sm font-bold text-amber-800 dark:text-amber-300">🔒 Reviews & Ratings</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">Sign in or create a Student account to rate and review this property.</p>
+        </div>
+      ) : userSession?.role === "student" ? (
         <div className="bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-700 rounded-2xl p-4 space-y-3">
           <p className="text-xs font-bold text-stone-800 dark:text-stone-100">
             {isTagalog ? "Maglagay ng Rating sa Tuluyan na ito (1-5 Bituin):" : "Rate this Boarding House / Apartment (1-5 Stars):"}

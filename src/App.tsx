@@ -173,7 +173,7 @@ export default function App() {
     return DEFAULT_DEMO_USERS;
   });
 
-  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin"; name: string; username: string; avatar?: string } | null>(() => {
+  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(() => {
     const saved = localStorage.getItem("casafinder_user_session");
     if (saved) {
       try {
@@ -572,6 +572,7 @@ export default function App() {
     : "approved";
 
   const isLandlordApproved = userSession?.role !== "landlord" || currentUserAccountStatus === "approved";
+  const isGuest = userSession?.role === "guest";
 
   // Landlord tool: Clear all listings to start completely fresh
   const handleClearAllListings = () => {
@@ -2131,6 +2132,17 @@ export default function App() {
                       <div className="text-[9px] text-blue-400">Onboarding</div>
                     </button>
                   </div>
+
+                  {/* Continue as Guest */}
+                  <button
+                    type="button"
+                    onClick={() => setUserSession({ role: "guest", name: "Guest", username: "guest" })}
+                    className="w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-stone-400 bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-stone-700 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>👤</span>
+                    <span>Continue as Guest</span>
+                    <span className="text-[10px] text-stone-400 font-normal">(Limited access)</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -2170,10 +2182,10 @@ export default function App() {
           </div>
           <button
             type="button"
-            onClick={handleOpenProfile}
+            onClick={isGuest ? () => setUserSession(null) : handleOpenProfile}
             className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-sm px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40"
           >
-            {userSession.name}
+            {isGuest ? "Sign In" : userSession.name}
           </button>
         </div>
       </nav>
@@ -2316,6 +2328,28 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 flex flex-col space-y-5">
+
+        {/* Guest Banner */}
+        {isGuest && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-lg shrink-0">👤</span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Browsing as Guest</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                  You can browse listings and view the map. Sign up or log in to contact landlords, leave reviews, and use AI Matching.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUserSession(null)}
+              className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
 
         {/* Search Panel - Only visible for Students */}
         {userSession.role === "student" && (
@@ -4061,8 +4095,8 @@ export default function App() {
               handleViewOnMap(prop, schoolId);
             }}
             userSession={userSession}
-            onAddReview={handleAddReview}
-            onAddReply={handleAddReply}
+            onAddReview={isGuest ? undefined : handleAddReview}
+            onAddReply={isGuest ? undefined : handleAddReply}
             onViewTenantProfile={(username) => {
               const found = registeredUsers.find(u => u.username === username);
               if (found) setTenantProfileUser(found);
