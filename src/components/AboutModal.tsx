@@ -150,24 +150,6 @@ export default function AboutModal({
                 </div>
               </div>
 
-              {/* ── FEATURES ── */}
-              <div className="space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Platform Features</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {features.map((f, i) => (
-                    <div key={i} className={`flex items-start gap-3 rounded-xl p-3 border bg-white/[0.03] hover:bg-white/[0.06] transition-colors ${f.color.split(" ").slice(1).join(" ")}`}>
-                      <div className={`shrink-0 mt-0.5 p-1.5 rounded-lg border ${f.color}`}>
-                        {f.icon}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-white">{f.title}</p>
-                        <p className="text-[11px] text-stone-400 leading-relaxed mt-0.5">{f.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* ── SCHOOLS ── */}
               <div className="space-y-3">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Schools Served in Gumaca</p>
