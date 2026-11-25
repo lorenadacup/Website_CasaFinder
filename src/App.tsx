@@ -1011,6 +1011,17 @@ export default function App() {
   const handleSignOut = () => {
     setUserSession(null);
     setSelectedProperty(null);
+    setShowProfileModal(false);
+    setProfileTab("profile");
+    setProfileEditName("");
+    setProfileEditEmail("");
+    setProfileEditMobile("");
+    setProfileEditAvatar("");
+    setSecurityMsg("");
+    setSecurityErrorMsg("");
+    setProfileEditPassword("");
+    setProfileCurrentPassword("");
+    setProfileConfirmPassword("");
   };
 
   // Handle Profile Modal open and populate user info
