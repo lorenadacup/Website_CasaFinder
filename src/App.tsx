@@ -2213,7 +2213,7 @@ export default function App() {
                         ? "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/80 border-blue-300 dark:border-blue-800"
                         : "text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-800"
                       }`}>
-                      {userSession.role === "student" ? t("studentRole") : userSession.role === "landlord" ? t("landlordRole") : "System Admin 🛡️"}
+                      {userSession.role === "student" ? t("studentRole") : userSession.role === "landlord" ? t("landlordRole") : userSession.role === "admin" ? "System Admin 🛡️" : "Guest 👀"}
                     </span>
                   </h1>
                 </div>
