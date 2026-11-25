@@ -771,6 +771,18 @@ export default function App() {
         username: user.username,
         avatar: user.avatar
       };
+      // Reset profile modal state before switching user
+      setShowProfileModal(false);
+      setProfileTab("profile");
+      setProfileEditName("");
+      setProfileEditEmail("");
+      setProfileEditMobile("");
+      setProfileEditAvatar("");
+      setSecurityMsg("");
+      setSecurityErrorMsg("");
+      setProfileEditPassword("");
+      setProfileCurrentPassword("");
+      setProfileConfirmPassword("");
       setUserSession(session);
       localStorage.setItem("casafinder_user_session", JSON.stringify(session));
 
