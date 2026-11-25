@@ -5790,7 +5790,10 @@ export default function App() {
                             cancelLabel: prefLanguage === "tagalog" ? "Huwag" : "Cancel",
                             onConfirm: () => {
                               const username = userSession?.username;
+                              if (!username) return;
                               setRegisteredUsers(prev => prev.filter(u => u.username !== username));
+                              // Delete from Supabase
+                              deleteUser(username).catch(console.error);
                               setUserSession(null);
                               localStorage.removeItem("casafinder_user_session");
                               localStorage.removeItem("casafinder_active_sessions");
