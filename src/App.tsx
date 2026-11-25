@@ -1000,28 +1000,29 @@ export default function App() {
     setProfileEditAddress(current.address || "");
     setProfileEditEmergencyContact(current.emergencyContact || "");
     setProfileEditAvatar(current.avatar || (current.role === "student" ? "🎓" : "🏠"));
-    setProfileEditFacebook(current.facebook || "");
-    setProfileEditFacebookLink((current as any).facebookLink || "");
-    setProfileEditSchool(current.school || "");
-    setProfileEditBio(current.bio || "");
-    setProfileEditPermitNo(current.permitNo || "");
-    setProfileEditPermitFile(current.permitFile || "");
+    const c = current as any;
+    setProfileEditFacebook(c.facebook || "");
+    setProfileEditFacebookLink(c.facebookLink || "");
+    setProfileEditSchool(c.school || "");
+    setProfileEditBio(c.bio || "");
+    setProfileEditPermitNo(c.permitNo || "");
+    setProfileEditPermitFile(c.permitFile || "");
     // Tenant rental preferences
     if (current.role === "student") {
-      setProfileEditAge(current.age || "");
-      setProfileEditGender(current.gender || "");
-      setProfileEditOccupation(current.occupation || "");
-      setProfileEditPrefLocation(current.prefLocation || "");
-      setProfileEditPrefType(current.prefType || "");
-      setProfileEditBudgetMin(current.budgetMin || "");
-      setProfileEditBudgetMax(current.budgetMax || "");
-      setProfileEditOccupants(current.occupants || "1");
-      setProfileEditMoveIn(current.moveIn || "");
-      setProfileEditStayDuration(current.stayDuration || "");
-      setProfileEditPets(current.pets || "");
-      setProfileEditSmoking(current.smoking || "");
+      setProfileEditAge(c.age || "");
+      setProfileEditGender(c.gender || "");
+      setProfileEditOccupation(c.occupation || "");
+      setProfileEditPrefLocation(c.prefLocation || "");
+      setProfileEditPrefType(c.prefType || "");
+      setProfileEditBudgetMin(c.budgetMin || "");
+      setProfileEditBudgetMax(c.budgetMax || "");
+      setProfileEditOccupants(c.occupants || "1");
+      setProfileEditMoveIn(c.moveIn || "");
+      setProfileEditStayDuration(c.stayDuration || "");
+      setProfileEditPets(c.pets || "");
+      setProfileEditSmoking(c.smoking || "");
     }
-    setProfileEditPermitStatus(current.permitStatus || "");
+    setProfileEditPermitStatus(c.permitStatus || "");
     setProfileEditPassword("");
     setProfileCurrentPassword("");
     setProfileConfirmPassword("");
@@ -3173,7 +3174,7 @@ export default function App() {
                   }}
                   onViewLandlordProfile={(prop) => setLandlordProfileProperty(prop)}
                   onViewOnMap={handleViewOnMap}
-                  currentUserRole={userSession?.role}
+                  currentUserRole={userSession?.role as any}
                   language={prefLanguage}
                 />
               ))}
@@ -3188,7 +3189,7 @@ export default function App() {
         isOpen={showAboutModal}
         onClose={() => setShowAboutModal(false)}
         prefLanguage={prefLanguage}
-        userRole={userSession?.role}
+        userRole={userSession?.role as any}
       />
 
       {/* Welcome / Onboarding Setup Multi-Slide Modal after Login or Signup */}
