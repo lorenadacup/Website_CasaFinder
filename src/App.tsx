@@ -2182,8 +2182,8 @@ export default function App() {
           </div>
           <button
             type="button"
-            onClick={isGuest ? () => setUserSession(null) : handleOpenProfile}
-            className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-sm px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40"
+            onClick={isGuest ? () => setUserSession(null) : () => handleOpenProfileTab("profile")}
+            className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-sm px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40 flex items-center gap-1.5"
           >
             {isGuest ? "Sign In" : userSession.name}
           </button>
@@ -2240,9 +2240,9 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={handleOpenProfile}
+                onClick={() => handleOpenProfileTab("settings")}
                 className="bg-gradient-to-r from-pink-50 to-blue-50 dark:from-stone-800 dark:to-stone-800 hover:from-pink-100 hover:to-blue-100 text-stone-800 dark:text-stone-100 border border-pink-200/70 dark:border-stone-700 rounded-xl p-2.5 transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95"
-                title="Settings / Profile Info"
+                title="Settings"
               >
                 <UserCog className="h-4 w-4 text-pink-600 dark:text-pink-400" />
               </button>
@@ -2274,9 +2274,9 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={handleOpenProfile}
+                onClick={() => handleOpenProfileTab("settings")}
                 className="bg-gradient-to-r from-pink-50 to-blue-50 dark:from-stone-800 dark:to-stone-800 hover:from-pink-100 hover:to-blue-100 text-stone-800 dark:text-stone-100 border border-pink-200/70 dark:border-stone-700 rounded-xl px-3 py-2 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                title="Settings / Profile Info"
+                title="Settings"
               >
                 <UserCog className="h-4 w-4 text-pink-600 dark:text-pink-400" />
                 <span>{t("tabProfileInfo")}</span>
@@ -4793,102 +4793,8 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Header Actions: Three Dots Menu & Close */}
+                {/* Header Actions: Close */}
                 <div className="flex items-center gap-1 shrink-0 relative">
-                  {/* Three Dots Button */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowProfileMoreMenu(!showProfileMoreMenu)}
-                      className={`p-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${showProfileMoreMenu
-                        ? "bg-pink-600 text-white border-pink-500 shadow-md shadow-pink-500/20"
-                        : "bg-stone-800/80 hover:bg-stone-800 text-stone-300 hover:text-white border-stone-700/60"
-                        }`}
-                      title={prefLanguage === "tagalog" ? "Iba pang Opsyon (Security, Preferences, About)" : "More Options (Security, Preferences, About)"}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-
-                    {/* Three Dots Dropdown Menu */}
-                    <AnimatePresence>
-                      {showProfileMoreMenu && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-40 bg-transparent"
-                            onClick={() => setShowProfileMoreMenu(false)}
-                          />
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: -4 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                            className="absolute right-0 top-10 z-50 w-64 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl p-2 space-y-1 text-stone-800 dark:text-stone-100 font-sans text-xs"
-                          >
-                            <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 border-b border-stone-100 dark:border-stone-800">
-                              {prefLanguage === "tagalog" ? "Mga Setting at Opsyon" : "Settings & Options"}
-                            </div>
-
-                            {/* Profile Info Option */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileTab("profile");
-                                setShowProfileMoreMenu(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl font-medium transition-colors flex items-center justify-between gap-2 cursor-pointer ${profileTab === "profile"
-                                ? "bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 font-bold"
-                                : "hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <User className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
-                                <span>{t("tabProfileInfo")}</span>
-                              </div>
-                              {profileTab === "profile" && <Check className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />}
-                            </button>
-
-                            {/* Security & Password */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileTab("settings");
-                                setShowProfileMoreMenu(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl font-medium transition-colors flex items-center justify-between gap-2 cursor-pointer ${profileTab === "settings"
-                                ? "bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 font-bold"
-                                : "hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Lock className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
-                                <span>{prefLanguage === "tagalog" ? "Security & Password" : "Security & Password"}</span>
-                              </div>
-                              {profileTab === "settings" && <Check className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />}
-                            </button>
-
-                            {/* Preferences & Display */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileTab("notifications");
-                                setShowProfileMoreMenu(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl font-medium transition-colors flex items-center justify-between gap-2 cursor-pointer ${profileTab === "notifications"
-                                ? "bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 font-bold"
-                                : "hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Bell className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
-                                <span>{prefLanguage === "tagalog" ? "Preferences & Display" : "Preferences & Display"}</span>
-                              </div>
-                              {profileTab === "notifications" && <Check className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />}
-                            </button>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
                   {/* Close Modal Button */}
                   <button
                     type="button"
