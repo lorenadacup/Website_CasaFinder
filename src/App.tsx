@@ -668,7 +668,7 @@ export default function App() {
       // Save new user to Supabase
       createUser(newUser).catch((err) => {
         console.error("Failed to save user to Supabase:", err);
-        showNotif({ type: "error", title: "Sync Error", message: "Account created locally but failed to sync to database. Please try again." });
+        showNotif({ type: "error", title: "Sync Error", message: `DB Error: ${err?.message || JSON.stringify(err)}` });
       });
 
       // Auto login
