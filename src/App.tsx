@@ -407,6 +407,7 @@ export default function App() {
 
   // Application State - loaded from Supabase
   const [propertiesList, setPropertiesList] = useState<Property[]>([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
   useEffect(() => {
     getAllProperties().then(setPropertiesList).catch(console.error);
@@ -424,7 +425,13 @@ export default function App() {
       } else {
         setRegisteredUsers(users as any);
       }
-    }).catch(console.error);
+      setUsersLoaded(true);
+    }).catch((err) => {
+      console.error(err);
+      // fallback to defaults if Supabase fails
+      setRegisteredUsers(DEFAULT_DEMO_USERS);
+      setUsersLoaded(true);
+    });
     const unsub = subscribeToUsers((updater) => setRegisteredUsers(updater));
     return () => { unsub(); };
   }, []);
@@ -570,6 +577,12 @@ export default function App() {
   // Handle Login and Signup submission
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Block login/signup until Supabase users are loaded
+    if (!usersLoaded) {
+      setLoginError("Loading user data, please wait a moment...");
+      return;
+    }
 
     const usernameVal = loginUsername.trim().toLowerCase();
     const contactVal = signupEmail.trim();
@@ -2081,8 +2094,10 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                  <button type="submit" className="w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
-                    {authMode === "signup" ? (prefLanguage === "tagalog" ? "Gumawa ng Account 🚀" : "Create Account 🚀") : (prefLanguage === "tagalog" ? "Mag-log In 🚀" : "Log In 🚀")}
+                  <button type="submit" disabled={!usersLoaded} className={`w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${!usersLoaded ? "opacity-70 cursor-not-allowed" : ""}`}>
+                    {!usersLoaded ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
+                    ) : authMode === "signup" ? (prefLanguage === "tagalog" ? "Gumawa ng Account 🚀" : "Create Account 🚀") : (prefLanguage === "tagalog" ? "Mag-log In 🚀" : "Log In 🚀")}
                   </button>
                 </form>
 
