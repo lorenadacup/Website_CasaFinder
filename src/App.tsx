@@ -158,24 +158,7 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(DEFAULT_DEMO_USERS);
 
-  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(() => {
-    const saved = localStorage.getItem("casafinder_user_session");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.username) {
-          const dedicatedAvatar = localStorage.getItem(`casafinder_avatar_${parsed.username}`);
-          return {
-            ...parsed,
-            avatar: dedicatedAvatar || parsed.avatar
-          };
-        }
-      } catch (e) {
-        console.error("Failed to parse saved user session:", e);
-      }
-    }
-    return null;
-  });
+  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(null);
 
   // Login Form States
   const [loginRole, setLoginRole] = useState<"student" | "landlord" | "admin">("student");
@@ -415,26 +398,35 @@ export default function App() {
         setRegisteredUsers(DEFAULT_DEMO_USERS);
       } else {
         setRegisteredUsers(users as any);
-        // Validate current session — if user was deleted, sign out
-        const savedSession = localStorage.getItem("casafinder_user_session");
-        if (savedSession) {
-          try {
-            const parsed = JSON.parse(savedSession);
-            if (parsed?.username && parsed.username !== "guest") {
-              const stillExists = users.find((u: any) => u.username === parsed.username);
-              if (!stillExists) {
+      }
+      // Restore session only if user still exists in Supabase
+      const savedSession = localStorage.getItem("casafinder_user_session");
+      if (savedSession) {
+        try {
+          const parsed = JSON.parse(savedSession);
+          if (parsed?.username) {
+            if (parsed.username === "guest") {
+              setUserSession(parsed);
+            } else {
+              const stillExists = (users as any[]).find((u: any) => u.username === parsed.username);
+              if (stillExists) {
+                const dedicatedAvatar = localStorage.getItem(`casafinder_avatar_${parsed.username}`);
+                setUserSession({
+                  ...parsed,
+                  name: stillExists.name || parsed.name,
+                  avatar: dedicatedAvatar || stillExists.avatar || parsed.avatar
+                });
+              } else {
+                // User was deleted — clear session
                 localStorage.removeItem("casafinder_user_session");
-                setUserSession(null);
-                setShowProfileModal(false);
               }
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
       setUsersLoaded(true);
     }).catch((err) => {
       console.error(err);
-      // fallback to defaults if Supabase fails
       setRegisteredUsers(DEFAULT_DEMO_USERS);
       setUsersLoaded(true);
     });
@@ -530,20 +522,6 @@ export default function App() {
     }
   }, [userSession]);
 
-  // Validate session against Supabase on mount — sign out if user was deleted
-  useEffect(() => {
-    if (!userSession || userSession.role === "guest") return;
-    import('./utils/db').then(({ getUserByUsername }) => {
-      getUserByUsername(userSession.username).then((user) => {
-        if (!user) {
-          // User no longer exists in DB — force sign out
-          localStorage.removeItem("casafinder_user_session");
-          setUserSession(null);
-          setShowProfileModal(false);
-        }
-      }).catch(console.error);
-    });
-  }, []);
 
   // (Properties are already persisted by the useEffect above — no duplicate here)
 
