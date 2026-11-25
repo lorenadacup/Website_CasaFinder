@@ -1874,13 +1874,13 @@ export default function App() {
                   <p className="text-stone-500 text-sm mt-1">Restricted — authorized officers only.</p>
                 </div>
                 <div className="p-3.5 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-xs text-amber-800 leading-relaxed">
-                  2 authorized accounts: <span className="font-mono text-amber-600 font-bold">gumaca.admin</span> &amp; <span className="font-mono text-amber-600 font-bold">campus.admin</span>
+                  🔒 Restricted access — authorized officers only.
                 </div>
                 {loginError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">⚠️ {loginError}</div>}
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Admin Username</label>
-                    <input type="text" required placeholder="gumaca.admin or campus.admin" value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
+                    <input type="text" required placeholder="Enter admin username" value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
                       className="w-full bg-stone-50 border border-stone-200 focus:border-amber-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
                   </div>
                   <div className="space-y-1.5">
