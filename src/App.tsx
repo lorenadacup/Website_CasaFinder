@@ -5349,7 +5349,8 @@ export default function App() {
                 {/* TAB: Settings Menu — Security, Preferences, Notifications */}
                 {profileTab === "menu" && (
                   <div className="space-y-2">
-                    {/* Security & Password Card */}
+                    {/* Security & Password Card — hidden for guests */}
+                    {userSession.role !== "guest" && (
                     <button
                       type="button"
                       onClick={() => { setProfileTab("settings"); setShowProfileMoreMenu(false); }}
@@ -5370,6 +5371,7 @@ export default function App() {
                       </div>
                       <ChevronDown className="h-4 w-4 text-stone-400 group-hover:text-amber-500 -rotate-90 transition-colors shrink-0" />
                     </button>
+                    )}
 
                     {/* Preferences & Display Card */}
                     <button
