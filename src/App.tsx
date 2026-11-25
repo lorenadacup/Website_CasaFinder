@@ -9,6 +9,12 @@ import TenantProfileModal from "./components/TenantProfileModal";
 import LandlordAdminProfileModal from "./components/LandlordAdminProfileModal";
 import LandlordProfileModal from "./components/LandlordProfileModal";
 import AboutModal from "./components/AboutModal";
+import {
+  getAllUsers, createUser, updateUser, upsertUser,
+  getAllProperties, upsertProperty, deleteProperty,
+  updatePropertyApproval, updatePropertyReviews,
+  subscribeToProperties, subscribeToUsers,
+} from "./utils/db";
 import NeighborhoodMap from "./components/NeighborhoodMap";
 import { PostingLocationMap, getNeighborhoodDefaultLatLng } from "./components/PostingLocationMap";
 import LoadingSpinner, { LoadingOverlay, CardSkeleton } from "./components/LoadingSpinner";
@@ -150,28 +156,7 @@ export default function App() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot" | "adminLogin">("login");
 
-  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(() => {
-    const saved = localStorage.getItem("casafinder_registered_users");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasAdmin1 = parsed.some((u: any) => u.username === "admin.gumaca");
-          const hasAdmin2 = parsed.some((u: any) => u.username === "admin.campus");
-          if (hasAdmin1 && hasAdmin2) return parsed;
-          return [
-            ...parsed.filter((u: any) => u.username !== "admin.gumaca" && u.username !== "admin.campus"),
-            DEFAULT_DEMO_USERS[2],
-            DEFAULT_DEMO_USERS[3]
-          ];
-        }
-      } catch (e) {
-        console.error("Failed to parse saved users:", e);
-      }
-    }
-    localStorage.setItem("casafinder_registered_users", JSON.stringify(DEFAULT_DEMO_USERS));
-    return DEFAULT_DEMO_USERS;
-  });
+  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(DEFAULT_DEMO_USERS);
 
   const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(() => {
     const saved = localStorage.getItem("casafinder_user_session");
@@ -260,7 +245,7 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showProfileMoreMenu, setShowProfileMoreMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [profileTab, setProfileTab] = useState<"profile" | "settings" | "notifications">("profile");
+  const [profileTab, setProfileTab] = useState<"profile" | "settings" | "notifications" | "menu">("profile");
   const [profileEditName, setProfileEditName] = useState("");
   const [profileEditEmail, setProfileEditEmail] = useState("");
   const [profileEditMobile, setProfileEditMobile] = useState("");
@@ -420,27 +405,34 @@ export default function App() {
   // Translation helper based on preferred language
   const t = (key: Parameters<typeof getTranslation>[1]) => getTranslation(prefLanguage, key);
 
-  // Application State - Load saved user properties from localStorage
-  const [propertiesList, setPropertiesList] = useState<Property[]>(() => {
-    const saved = localStorage.getItem("gumaca_student_properties_v2");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Respect whatever is in storage, even an empty array (means user deleted everything)
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      } catch (e) {
-        console.error("Failed to parse saved properties:", e);
-      }
-    }
-    // First ever visit — start empty (no demo data pre-loaded)
-    return [];
-  });
+  // Application State - loaded from Supabase
+  const [propertiesList, setPropertiesList] = useState<Property[]>([]);
 
   useEffect(() => {
-    localStorage.setItem("gumaca_student_properties_v2", JSON.stringify(propertiesList));
-  }, [propertiesList]);
+    // Load properties from Supabase on mount
+    getAllProperties().then(setPropertiesList).catch(console.error);
+    // Real-time subscription
+    const unsub = subscribeToProperties(setPropertiesList);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    // Load users from Supabase on mount, seed defaults if empty
+    getAllUsers().then(async (users) => {
+      if (users.length === 0) {
+        // First run — seed default demo users
+        for (const u of DEFAULT_DEMO_USERS) {
+          await upsertUser(u).catch(console.error);
+        }
+        setRegisteredUsers(DEFAULT_DEMO_USERS);
+      } else {
+        setRegisteredUsers(users as any);
+      }
+    }).catch(console.error);
+    // Real-time subscription
+    const unsub = subscribeToUsers((users) => setRegisteredUsers(users as any));
+    return unsub;
+  }, []);
 
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailModalProperty, setDetailModalProperty] = useState<Property | null>(null);
@@ -530,10 +522,7 @@ export default function App() {
     }
   }, [userSession]);
 
-  // Persist registered users
-  useEffect(() => {
-    localStorage.setItem("casafinder_registered_users", JSON.stringify(registeredUsers));
-  }, [registeredUsers]);
+  // Persist registered users — synced to Supabase via real-time subscription
 
   // (Properties are already persisted by the useEffect above — no duplicate here)
 
@@ -563,6 +552,7 @@ export default function App() {
   // Landlord tool: Seed beautiful student-friendly Gumaca listings
   const handleSeedListings = () => {
     setPropertiesList([...studentDemoProperties]);
+    studentDemoProperties.forEach(p => upsertProperty(p).catch(console.error));
     logActivity("Seeded demo listings", `${studentDemoProperties.length} listings`, "seed");
   };
 
@@ -576,6 +566,7 @@ export default function App() {
 
   // Landlord tool: Clear all listings to start completely fresh
   const handleClearAllListings = () => {
+    propertiesList.forEach(p => deleteProperty(p.id).catch(console.error));
     setPropertiesList([]);
     setSelectedProperty(null);
     logActivity("Cleared all listings", "All listings removed", "clear");
@@ -647,6 +638,8 @@ export default function App() {
       };
 
       setRegisteredUsers(prev => [...prev, newUser]);
+      // Save new user to Supabase
+      createUser(newUser).catch(console.error);
 
       // Auto login
       setUserSession({
@@ -823,7 +816,9 @@ export default function App() {
     });
 
     setRegisteredUsers(updatedUsers);
-    localStorage.setItem("casafinder_registered_users", JSON.stringify(updatedUsers));
+    // Sync to Supabase
+    const updatedUser = updatedUsers.find((u: any) => u.username === userSession.username);
+    if (updatedUser) upsertUser(updatedUser).catch(console.error);
     const newAvatar = onboardingAvatar.trim() || userSession.avatar;
     if (newAvatar && userSession.username) {
       localStorage.setItem(`casafinder_avatar_${userSession.username}`, newAvatar);
@@ -918,7 +913,9 @@ export default function App() {
     });
 
     setRegisteredUsers(updatedUsers);
-    localStorage.setItem("casafinder_registered_users", JSON.stringify(updatedUsers));
+    // Sync password reset to Supabase
+    const resetUser = updatedUsers.find((u: any) => u.username === forgotFoundUser?.username);
+    if (resetUser) upsertUser(resetUser).catch(console.error);
     setForgotSuccessMsg("Successfully reset your password! You can now log in with your new password.");
     setLoginError("");
     setForgotOtpSent(false);
@@ -1041,7 +1038,7 @@ export default function App() {
     setShowProfileModal(true);
   };
 
-  const handleOpenProfileTab = (tab: "profile" | "settings" | "notifications" = "profile") => {
+  const handleOpenProfileTab = (tab: "profile" | "settings" | "notifications" | "menu" = "profile") => {
     handleOpenProfile();
     setProfileTab(tab);
     setShowProfileMoreMenu(false);
@@ -1131,7 +1128,9 @@ export default function App() {
       }
 
       setRegisteredUsers(updatedUsers);
-      localStorage.setItem("casafinder_registered_users", JSON.stringify(updatedUsers));
+      // Sync profile update to Supabase
+      const savedUser = updatedUsers.find((u: any) => u.username === userSession.username);
+      if (savedUser) upsertUser(savedUser).catch(console.error);
 
       const newAvatar = profileEditAvatar.trim() || userSession.avatar;
       const updatedSession = {
@@ -1344,6 +1343,8 @@ export default function App() {
     };
 
     setPropertiesList(prev => [newProperty, ...prev]);
+    // Save to Supabase
+    upsertProperty(newProperty).catch(console.error);
 
     // Reset Form Fields
     setNewTitle("");
@@ -1379,29 +1380,20 @@ export default function App() {
     }
   };
 
-  // Delete a specific landlord-created property listing
   const handleDeleteProperty = (id: string) => {
     setPropertiesList(prev => prev.filter(p => p.id !== id));
-    if (selectedProperty?.id === id) {
-      setSelectedProperty(null);
-    }
-    if (detailModalProperty?.id === id) {
-      setDetailModalProperty(null);
-    }
-    if (landlordProfileProperty?.id === id) {
-      setLandlordProfileProperty(null);
-    }
+    // Delete from Supabase
+    deleteProperty(id).catch(console.error);
+    if (selectedProperty?.id === id) setSelectedProperty(null);
+    if (detailModalProperty?.id === id) setDetailModalProperty(null);
+    if (landlordProfileProperty?.id === id) setLandlordProfileProperty(null);
   };
 
-  // Admin action: Approve listing
   const handleApproveProperty = (id: string) => {
     const prop = propertiesList.find(p => p.id === id);
-    setPropertiesList(prev => prev.map(p => {
-      if (p.id === id) {
-        return { ...p, approvalStatus: "approved" as const };
-      }
-      return p;
-    }));
+    setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, approvalStatus: "approved" as const } : p));
+    // Sync to Supabase
+    updatePropertyApproval(id, "approved").catch(console.error);
     logActivity("Approved listing", prop?.title || id, "approve");
     showNotif({ type: "success", title: "✅ Listing Approved!", message: prefLanguage === "tagalog" ? "Na-approve na ang listing! Lalabas na ito sa pampublikong website." : "Listing approved! It will now appear on the public website." });
   };
@@ -1409,12 +1401,9 @@ export default function App() {
   // Admin action: Reject listing
   const handleRejectProperty = (id: string, reason?: string) => {
     const prop = propertiesList.find(p => p.id === id);
-    setPropertiesList(prev => prev.map(p => {
-      if (p.id === id) {
-        return { ...p, approvalStatus: "rejected" as const, rejectionReason: reason || "" };
-      }
-      return p;
-    }));
+    setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, approvalStatus: "rejected" as const, rejectionReason: reason || "" } : p));
+    // Sync to Supabase
+    updatePropertyApproval(id, "rejected", reason).catch(console.error);
     logActivity("Rejected listing", prop?.title || id, "reject");
     showNotif({ type: "error", title: "❌ Listing Rejected", message: prefLanguage === "tagalog" ? "Na-reject ang listing." : "The listing has been rejected." });
   };
@@ -1428,10 +1417,14 @@ export default function App() {
     setPropertiesList(prev => prev.map(p =>
       p.landlordUsername === username ? { ...p, approvalStatus: "approved" as const } : p
     ));
+    // Sync to Supabase
+    updateUser(username, { accountStatus: "approved" }).catch(console.error);
+    propertiesList.filter(p => p.landlordUsername === username).forEach(p =>
+      updatePropertyApproval(p.id, "approved").catch(console.error)
+    );
     logActivity(`Approved landlord account`, user?.name || username, "approve");
   };
 
-  // Admin action: Reject landlord account + hide all their listings from public view
   const handleRejectLandlordAccount = (username: string, reason?: string) => {
     const user = registeredUsers.find(u => u.username === username);
     setRegisteredUsers(prev => prev.map(u =>
@@ -1440,6 +1433,11 @@ export default function App() {
     setPropertiesList(prev => prev.map(p =>
       p.landlordUsername === username ? { ...p, approvalStatus: "rejected" as const } : p
     ));
+    // Sync to Supabase
+    updateUser(username, { accountStatus: "rejected", rejectionReason: reason || "" }).catch(console.error);
+    propertiesList.filter(p => p.landlordUsername === username).forEach(p =>
+      updatePropertyApproval(p.id, "rejected", reason).catch(console.error)
+    );
     logActivity(`Rejected landlord account`, user?.name || username, "reject");
   };
 
@@ -1483,12 +1481,10 @@ export default function App() {
       if (p.id === propertyId) {
         const updatedReviews = [newReview, ...(p.reviews || [])];
         const updatedProp = { ...p, reviews: updatedReviews };
-        if (selectedProperty?.id === propertyId) {
-          setSelectedProperty(updatedProp);
-        }
-        if (detailModalProperty?.id === propertyId) {
-          setDetailModalProperty(updatedProp);
-        }
+        if (selectedProperty?.id === propertyId) setSelectedProperty(updatedProp);
+        if (detailModalProperty?.id === propertyId) setDetailModalProperty(updatedProp);
+        // Sync reviews to Supabase
+        updatePropertyReviews(propertyId, updatedReviews).catch(console.error);
         return updatedProp;
       }
       return p;
@@ -1787,10 +1783,10 @@ export default function App() {
 
   if (!userSession) {
     return (
-      <div className="min-h-screen h-[100dvh] w-full bg-slate-50 text-slate-800 font-sans flex antialiased overflow-hidden">
+      <div className="w-full bg-slate-50 text-slate-800 font-sans flex antialiased lg:h-screen lg:overflow-hidden">
 
         {/* LEFT HERO PANEL — desktop only */}
-        <div className="hidden lg:flex lg:w-[44%] relative flex-col justify-between p-12 xl:p-16 overflow-hidden shrink-0">
+        <div className="hidden lg:flex lg:w-[44%] relative flex-col justify-between p-10 xl:p-14 overflow-hidden shrink-0 h-full">
           {/* Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-pink-50" />
           <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-400/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1813,7 +1809,7 @@ export default function App() {
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live · Gumaca, Quezon
                 </div>
-                <h1 className="text-4xl xl:text-5xl font-black leading-[1.15] tracking-tight text-slate-800">
+                <h1 className="text-3xl xl:text-4xl font-black leading-[1.15] tracking-tight text-slate-800">
                   Your Partner in<br />
                   <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">Finding Your Home</span>
                 </h1>
@@ -1855,7 +1851,7 @@ export default function App() {
         </div>
 
         {/* RIGHT FORM PANEL */}
-        <div className="flex-1 flex items-center justify-center p-5 sm:p-8 overflow-y-auto bg-[#ffffff] border-l border-slate-100">
+        <div className="flex-1 flex justify-center p-5 sm:p-8 py-10 bg-[#ffffff] border-l border-slate-100 overflow-y-auto h-full">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2119,19 +2115,7 @@ export default function App() {
                       <div className="text-[10px] text-amber-500 mt-0.5">🛡️ System</div>
                     </button>
                   </div>
-                  {/* Preview Onboarding row */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => handlePreviewOnboarding("student")}
-                      className="py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-200 rounded-xl text-center transition-all cursor-pointer active:scale-95">
-                      <div className="text-[10px] font-bold text-pink-600">▶ Preview Tenant</div>
-                      <div className="text-[9px] text-pink-400">Onboarding</div>
-                    </button>
-                    <button type="button" onClick={() => handlePreviewOnboarding("landlord")}
-                      className="py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-200 rounded-xl text-center transition-all cursor-pointer active:scale-95">
-                      <div className="text-[10px] font-bold text-blue-600">▶ Preview Landlord</div>
-                      <div className="text-[9px] text-blue-400">Onboarding</div>
-                    </button>
-                  </div>
+
 
                   {/* Continue as Guest */}
                   <button
@@ -2240,7 +2224,7 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => handleOpenProfileTab("settings")}
+                onClick={() => handleOpenProfileTab("menu")}
                 className="bg-gradient-to-r from-pink-50 to-blue-50 dark:from-stone-800 dark:to-stone-800 hover:from-pink-100 hover:to-blue-100 text-stone-800 dark:text-stone-100 border border-pink-200/70 dark:border-stone-700 rounded-xl p-2.5 transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95"
                 title="Settings"
               >
@@ -2274,12 +2258,12 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={() => handleOpenProfileTab("settings")}
+                onClick={() => handleOpenProfileTab("menu")}
                 className="bg-gradient-to-r from-pink-50 to-blue-50 dark:from-stone-800 dark:to-stone-800 hover:from-pink-100 hover:to-blue-100 text-stone-800 dark:text-stone-100 border border-pink-200/70 dark:border-stone-700 rounded-xl px-3 py-2 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                 title="Settings"
               >
                 <UserCog className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-                <span>{t("tabProfileInfo")}</span>
+                <span>{prefLanguage === "tagalog" ? "Settings" : "Settings"}</span>
               </button>
               <button
                 type="button"
@@ -4776,9 +4760,9 @@ export default function App() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <h2 className="font-display font-bold text-sm text-white truncate">
                         {profileTab === "profile" && t("profileTitle")}
+                        {profileTab === "menu" && (prefLanguage === "tagalog" ? "Settings" : "Settings")}
                         {profileTab === "settings" && (prefLanguage === "tagalog" ? "Seguridad at Password" : "Security & Password")}
                         {profileTab === "notifications" && (prefLanguage === "tagalog" ? "Preferences at Display" : "Preferences & Display")}
-
                       </h2>
                       <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full border ${userSession.role === "student"
                         ? "bg-pink-950/80 text-pink-300 border-pink-800"
@@ -4810,26 +4794,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Quick Sub-view Back Bar (when in Security, Preferences, or About) */}
-              {profileTab !== "profile" && (
-                <div className="bg-stone-100 dark:bg-stone-800/80 px-4 py-2 flex items-center justify-between border-b border-stone-200 dark:border-stone-700 text-xs shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileTab("profile");
-                      setShowProfileMoreMenu(false);
-                    }}
-                    className="inline-flex items-center gap-1.5 font-bold text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 transition-colors cursor-pointer active:scale-95"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>{prefLanguage === "tagalog" ? "Bumalik sa Profile Info" : "Back to Profile Info"}</span>
-                  </button>
-                  <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
-                    {profileTab === "settings" && (prefLanguage === "tagalog" ? "Seguridad & PIN" : "Security & PIN")}
-                    {profileTab === "notifications" && (prefLanguage === "tagalog" ? "Tema & Wika" : "Theme & Display")}
-                  </span>
-                </div>
-              )}
+
 
               {/* Modal Body & Form */}
               <form onSubmit={handleSaveProfile} className="p-3.5 space-y-3 overflow-y-auto flex-1">
@@ -5329,6 +5294,77 @@ export default function App() {
                   </div>
                 )}
 
+                {/* TAB: Settings Menu — Security, Preferences, Notifications */}
+                {profileTab === "menu" && (
+                  <div className="space-y-2">
+                    {/* Security & Password Card */}
+                    <button
+                      type="button"
+                      onClick={() => { setProfileTab("settings"); setShowProfileMoreMenu(false); }}
+                      className="w-full flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 hover:bg-amber-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-300 dark:hover:border-amber-700 rounded-2xl transition-all group cursor-pointer active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-xl border border-amber-200 dark:border-amber-800 group-hover:scale-110 transition-transform">
+                          <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-stone-800 dark:text-stone-100">
+                            {prefLanguage === "tagalog" ? "Seguridad at Password" : "Security & Password"}
+                          </div>
+                          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-light">
+                            {prefLanguage === "tagalog" ? "Password, 2FA, at Security PIN" : "Password, 2FA, and Security PIN"}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-stone-400 group-hover:text-amber-500 -rotate-90 transition-colors shrink-0" />
+                    </button>
+
+                    {/* Preferences & Display Card */}
+                    <button
+                      type="button"
+                      onClick={() => { setProfileTab("notifications"); setShowProfileMoreMenu(false); }}
+                      className="w-full flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 hover:bg-blue-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group cursor-pointer active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-xl border border-blue-200 dark:border-blue-800 group-hover:scale-110 transition-transform">
+                          <SlidersHorizontal className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-stone-800 dark:text-stone-100">
+                            {prefLanguage === "tagalog" ? "Preferences at Display" : "Preferences & Display"}
+                          </div>
+                          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-light">
+                            {prefLanguage === "tagalog" ? "Tema, Wika, at Mapa" : "Theme, Language, and Map"}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-stone-400 group-hover:text-blue-500 -rotate-90 transition-colors shrink-0" />
+                    </button>
+
+                    {/* Notifications Card */}
+                    <button
+                      type="button"
+                      onClick={() => { setProfileTab("notifications"); setShowProfileMoreMenu(false); }}
+                      className="w-full flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 hover:bg-emerald-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700 rounded-2xl transition-all group cursor-pointer active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-950/50 dark:to-green-950/50 rounded-xl border border-emerald-200 dark:border-emerald-800 group-hover:scale-110 transition-transform">
+                          <Bell className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-stone-800 dark:text-stone-100">
+                            {prefLanguage === "tagalog" ? "Mga Notipikasyon" : "Notifications"}
+                          </div>
+                          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-light">
+                            {prefLanguage === "tagalog" ? "Email at SMS alerts" : "Email and SMS alerts"}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-stone-400 group-hover:text-emerald-500 -rotate-90 transition-colors shrink-0" />
+                    </button>
+                  </div>
+                )}
+
                 {/* TAB 2: Security & Password */}
                 {profileTab === "settings" && (
                   <div className="space-y-4">
@@ -5818,7 +5854,20 @@ export default function App() {
                 )}
 
                 {/* Modal Footer Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
+                <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
+                  {/* Back to Settings (shown when inside a sub-tab) */}
+                  {profileTab !== "menu" && (
+                    <button
+                      type="button"
+                      onClick={() => setProfileTab("menu")}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 dark:text-stone-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      <span>{prefLanguage === "tagalog" ? "Bumalik" : "Back"}</span>
+                    </button>
+                  )}
+                  {profileTab === "menu" && <span />}
+                  <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setShowProfileModal(false)}
@@ -5826,7 +5875,7 @@ export default function App() {
                   >
                     {t("close")}
                   </button>
-                  {profileTab !== "notifications" && (
+                  {profileTab !== "notifications" && profileTab !== "menu" && (
                     <button
                       type="submit"
                       disabled={isSavingProfile}
@@ -5849,6 +5898,7 @@ export default function App() {
                       )}
                     </button>
                   )}
+                  </div>
                 </div>
               </form>
             </motion.div>
