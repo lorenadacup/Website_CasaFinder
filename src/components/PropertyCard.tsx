@@ -128,29 +128,26 @@ export default function PropertyCard({
       </div>
 
       {/* Card Info Content */}
-      <div className="flex flex-1 flex-col p-4 sm:p-6">
-        <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 flex-wrap">
+      <div className="flex flex-1 flex-col p-2.5 sm:p-6">
+        <div className="mb-1.5 sm:mb-4 flex items-center justify-between gap-1 flex-wrap">
           <div className="flex flex-col">
-            <span className="font-display text-2xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 dark:from-pink-400 dark:to-indigo-400">
+            <span className="font-display text-lg sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 dark:from-pink-400 dark:to-indigo-400">
               {formatPrice(property.price)}
             </span>
-            <span className="text-[10px] sm:text-xs font-medium text-stone-500 dark:text-stone-400 mt-0.5">{t("perMonth")}</span>
+            <span className="text-[9px] sm:text-xs font-medium text-stone-500 dark:text-stone-400">{t("perMonth")}</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-700 text-[10px] sm:text-xs font-bold text-amber-800 dark:text-amber-300 shrink-0 shadow-sm">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+          <div className="flex items-center gap-1 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 px-2 py-1 rounded-xl border border-amber-200 dark:border-amber-700 text-[9px] sm:text-xs font-bold text-amber-800 dark:text-amber-300 shrink-0 shadow-sm">
+            <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
             <span>{avgRating ? avgRating : "New"}</span>
-            {reviews.length > 0 && (
-              <span className="text-[9px] text-amber-600/70 dark:text-amber-400/70 font-normal">({reviews.length})</span>
-            )}
           </div>
         </div>
 
-        <h3 className="mb-2 sm:mb-3 font-display text-base sm:text-lg font-bold leading-snug text-stone-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors line-clamp-2">
+        <h3 className="mb-1 sm:mb-3 font-display text-xs sm:text-lg font-bold leading-snug text-stone-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors line-clamp-2">
           {property.title}
         </h3>
 
-        <p className="mb-4 line-clamp-2 text-[11px] sm:text-xs leading-relaxed text-stone-600 dark:text-stone-400 font-normal">
+        <p className="hidden sm:block mb-4 line-clamp-2 text-[11px] sm:text-xs leading-relaxed text-stone-600 dark:text-stone-400 font-normal">
           {property.description}
         </p>
 
@@ -163,27 +160,26 @@ export default function PropertyCard({
                 onViewOnMap(property, nearestSchool.id);
               }
             }}
-            className="mb-4 bg-gradient-to-r from-pink-50/95 via-indigo-50/60 to-blue-50/95 dark:from-pink-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 hover:from-pink-100 hover:to-indigo-100 dark:hover:from-pink-900/50 dark:hover:to-indigo-900/50 border border-pink-200/80 dark:border-pink-800/50 rounded-lg p-3 flex items-center justify-between text-xs text-stone-800 dark:text-stone-200 font-medium transition-all cursor-pointer group/school gap-2 shadow-sm"
-            title="I-click para makita ang linya papuntang paaralan sa mapa"
+            className="mb-1.5 sm:mb-4 bg-gradient-to-r from-pink-50/95 via-indigo-50/60 to-blue-50/95 dark:from-pink-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-pink-200/80 dark:border-pink-800/50 rounded-lg p-1.5 sm:p-3 flex items-center justify-between text-xs text-stone-800 dark:text-stone-200 font-medium transition-all cursor-pointer group/school gap-1 shadow-sm"
           >
-            <div className="flex items-center gap-2 truncate">
-              <GraduationCap className="h-4 w-4 text-pink-600 dark:text-pink-400 shrink-0" />
-              <span className="truncate text-[10px] sm:text-xs">
-                <strong>{nearestSchool.distanceKm.toFixed(1)}km</strong> • {nearestSchool.shortName || nearestSchool.name.replace(/ [🎓🏫🏛️]/g, '')}
+            <div className="flex items-center gap-1 truncate">
+              <GraduationCap className="h-3 w-3 text-pink-600 dark:text-pink-400 shrink-0" />
+              <span className="truncate text-[9px] sm:text-xs">
+                <strong>{nearestSchool.distanceKm.toFixed(1)}km</strong>
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] bg-gradient-to-r from-pink-500 to-indigo-600 group-hover/school:from-pink-600 group-hover/school:to-indigo-700 text-white font-bold px-2.5 py-1 rounded-lg shrink-0 shadow-md">
+            <span className="text-[9px] bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-bold px-1.5 py-0.5 rounded-lg shrink-0">
               {nearestSchool.walkingMinutes}min
             </span>
           </div>
         )}
 
-        {/* Features Row */}
-        <div className="mb-4 flex flex-wrap gap-1.5">
+        {/* Features Row - hidden on mobile */}
+        <div className="hidden sm:flex mb-4 flex-wrap gap-1.5">
           {property.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="rounded-lg bg-gradient-to-r from-stone-100 to-stone-50 dark:from-stone-800 dark:to-stone-700 px-2.5 py-1 text-[10px] font-medium text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-stone-700/80 truncate max-w-[130px] shadow-sm hover:shadow-md transition-shadow"
+              className="rounded-lg bg-gradient-to-r from-stone-100 to-stone-50 dark:from-stone-800 dark:to-stone-700 px-2.5 py-1 text-[10px] font-medium text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-stone-700/80 truncate max-w-[130px] shadow-sm"
             >
               {tag}
             </span>
@@ -191,16 +187,16 @@ export default function PropertyCard({
         </div>
 
         {/* Spacer & Specs */}
-        <div className="mt-auto pt-4 border-t border-stone-200 dark:border-stone-700 flex items-center justify-between text-stone-600 dark:text-stone-400 gap-2">
+        <div className="mt-auto pt-1.5 sm:pt-4 border-t border-stone-200 dark:border-stone-700 flex items-center justify-between text-stone-600 dark:text-stone-400 gap-1">
           {/* Specs */}
-          <div className="flex items-center gap-4 text-xs font-medium">
-            <span className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 px-2.5 py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-              <BedDouble className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <strong className="text-stone-800 dark:text-stone-200">{property.beds}</strong> <span className="text-stone-500 dark:text-stone-400 hidden sm:inline text-[10px]">bed</span>
+          <div className="flex items-center gap-1.5 sm:gap-4 text-xs font-medium">
+            <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+              <BedDouble className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
+              <strong className="text-stone-800 dark:text-stone-200 text-[10px] sm:text-xs">{property.beds}</strong>
             </span>
-            <span className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
-              <Bath className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <strong className="text-stone-800 dark:text-stone-200">{property.baths}</strong> <span className="text-stone-500 dark:text-stone-400 hidden sm:inline text-[10px]">bath</span>
+            <span className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
+              <Bath className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+              <strong className="text-stone-800 dark:text-stone-200 text-[10px] sm:text-xs">{property.baths}</strong>
             </span>
           </div>
 
@@ -221,7 +217,7 @@ export default function PropertyCard({
         </div>
 
         {/* Landlord Profile Bar */}
-        <div className="mt-4 pt-3.5 border-t border-stone-200 dark:border-stone-700 flex items-center justify-between text-xs gap-2">
+        <div className="hidden sm:flex mt-4 pt-3.5 border-t border-stone-200 dark:border-stone-700 items-center justify-between text-xs gap-2">
           <div
             className={`flex items-center gap-2 min-w-0 ${onViewLandlordProfile ? "cursor-pointer group/owner hover:opacity-80 transition-opacity" : ""}`}
             onClick={(e) => {

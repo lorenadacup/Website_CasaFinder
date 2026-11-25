@@ -2187,16 +2187,16 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-0.5">
             {[
-              { label: "Home", onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-              { label: "Features", onClick: () => setNavInfoSection("features") },
-              { label: "How it works", onClick: () => setNavInfoSection("how-it-works") },
-              { label: "Who it's for", onClick: () => setNavInfoSection("who-its-for") },
+              { label: "Home", onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }), mobileHide: false },
+              { label: "Features", onClick: () => setNavInfoSection("features"), mobileHide: false },
+              { label: "How it works", onClick: () => setNavInfoSection("how-it-works"), mobileHide: true },
+              { label: "Who it's for", onClick: () => setNavInfoSection("who-its-for"), mobileHide: true },
             ].map((item, i) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={item.onClick}
-                className={`px-3.5 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`${item.mobileHide ? "hidden sm:block" : ""} px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${
                   i === 0
                     ? "text-white bg-white/20 border border-white/25 shadow-sm"
                     : "text-purple-200 hover:text-white hover:bg-white/15"
