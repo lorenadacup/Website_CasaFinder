@@ -5905,18 +5905,8 @@ export default function App() {
                 )}
 
                 {/* Modal Footer Buttons */}
-                <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
-                  {profileTab !== "menu" && (
-                    <button
-                      type="button"
-                      onClick={() => setProfileTab("menu")}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 dark:text-stone-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
-                    >
-                      <ArrowLeft className="h-3.5 w-3.5" />
-                      <span>{prefLanguage === "tagalog" ? "Bumalik" : "Back"}</span>
-                    </button>
-                  )}
-                  <div className={`flex items-center gap-3 ${profileTab === "menu" ? "ml-auto" : ""}`}>
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
+                  <div className={`flex items-center gap-3`}>
                   <button
                     type="button"
                     onClick={() => setShowProfileModal(false)}
