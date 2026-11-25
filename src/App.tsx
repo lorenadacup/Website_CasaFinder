@@ -639,15 +639,37 @@ export default function App() {
         mobile: !isEmail ? contactVal : "",
         school: "",
         bio: "",
+        address: "",
+        emergencyContact: "",
+        avatar: "",
+        facebook: "",
+        facebookLink: "",
         permitNo: "",
         permitFile: "",
         permitStatus: "",
+        age: "",
+        gender: "",
+        occupation: "",
+        prefLocation: "",
+        prefType: "",
+        budgetMin: "",
+        budgetMax: "",
+        occupants: "1",
+        moveIn: "",
+        stayDuration: "",
+        pets: "",
+        smoking: "",
+        businessName: "",
+        yearsOperation: "",
         accountStatus: (loginRole === "landlord" ? "pending" : "approved") as "pending" | "approved" | "rejected"
       };
 
       setRegisteredUsers(prev => [...prev, newUser]);
       // Save new user to Supabase
-      createUser(newUser).catch(console.error);
+      createUser(newUser).catch((err) => {
+        console.error("Failed to save user to Supabase:", err);
+        showNotif({ type: "error", title: "Sync Error", message: "Account created locally but failed to sync to database. Please try again." });
+      });
 
       // Auto login
       setUserSession({
