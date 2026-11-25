@@ -165,18 +165,9 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.username) {
           const dedicatedAvatar = localStorage.getItem(`casafinder_avatar_${parsed.username}`);
-          const savedUsers = localStorage.getItem("casafinder_registered_users");
-          let userInDb: any = null;
-          if (savedUsers) {
-            try {
-              const users = JSON.parse(savedUsers);
-              userInDb = users.find((u: any) => u.username === parsed.username);
-            } catch (err) { }
-          }
           return {
             ...parsed,
-            name: userInDb?.name || parsed.name,
-            avatar: dedicatedAvatar || userInDb?.avatar || parsed.avatar
+            avatar: dedicatedAvatar || parsed.avatar
           };
         }
       } catch (e) {
@@ -539,7 +530,20 @@ export default function App() {
     }
   }, [userSession]);
 
-  // Persist registered users — synced to Supabase via real-time subscription
+  // Validate session against Supabase on mount — sign out if user was deleted
+  useEffect(() => {
+    if (!userSession || userSession.role === "guest") return;
+    import('./utils/db').then(({ getUserByUsername }) => {
+      getUserByUsername(userSession.username).then((user) => {
+        if (!user) {
+          // User no longer exists in DB — force sign out
+          localStorage.removeItem("casafinder_user_session");
+          setUserSession(null);
+          setShowProfileModal(false);
+        }
+      }).catch(console.error);
+    });
+  }, []);
 
   // (Properties are already persisted by the useEffect above — no duplicate here)
 
