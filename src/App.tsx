@@ -2189,14 +2189,14 @@ export default function App() {
             {[
               { label: "Home", onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }), mobileHide: false },
               { label: "Features", onClick: () => setNavInfoSection("features"), mobileHide: false },
-              { label: "How it works", onClick: () => setNavInfoSection("how-it-works"), mobileHide: true },
-              { label: "Who it's for", onClick: () => setNavInfoSection("who-its-for"), mobileHide: true },
+              { label: "How it works", onClick: () => setNavInfoSection("how-it-works"), mobileHide: false },
+              { label: "Who it's for", onClick: () => setNavInfoSection("who-its-for"), mobileHide: false },
             ].map((item, i) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={item.onClick}
-                className={`${item.mobileHide ? "hidden sm:block" : ""} px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`px-2 py-1 text-[10px] sm:px-3.5 sm:py-1.5 sm:text-[13px] font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                   i === 0
                     ? "text-white bg-white/20 border border-white/25 shadow-sm"
                     : "text-purple-200 hover:text-white hover:bg-white/15"
