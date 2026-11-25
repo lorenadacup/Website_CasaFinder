@@ -10,7 +10,7 @@ import LandlordAdminProfileModal from "./components/LandlordAdminProfileModal";
 import LandlordProfileModal from "./components/LandlordProfileModal";
 import AboutModal from "./components/AboutModal";
 import {
-  getAllUsers, createUser, updateUser, upsertUser,
+  getAllUsers, createUser, updateUser, upsertUser, deleteUser,
   getAllProperties, upsertProperty, deleteProperty,
   updatePropertyApproval, updatePropertyReviews,
   subscribeToProperties, subscribeToUsers,
@@ -424,6 +424,21 @@ export default function App() {
         setRegisteredUsers(DEFAULT_DEMO_USERS);
       } else {
         setRegisteredUsers(users as any);
+        // Validate current session — if user was deleted, sign out
+        const savedSession = localStorage.getItem("casafinder_user_session");
+        if (savedSession) {
+          try {
+            const parsed = JSON.parse(savedSession);
+            if (parsed?.username && parsed.username !== "guest") {
+              const stillExists = users.find((u: any) => u.username === parsed.username);
+              if (!stillExists) {
+                localStorage.removeItem("casafinder_user_session");
+                setUserSession(null);
+                setShowProfileModal(false);
+              }
+            }
+          } catch {}
+        }
       }
       setUsersLoaded(true);
     }).catch((err) => {
@@ -1514,6 +1529,18 @@ export default function App() {
       cancelLabel: "Cancel",
       onConfirm: () => {
         setRegisteredUsers(prev => prev.filter(u => u.username !== username));
+        // Delete from Supabase
+        deleteUser(username).catch(console.error);
+        // Clear their localStorage session if they were logged in
+        const savedSession = localStorage.getItem("casafinder_user_session");
+        if (savedSession) {
+          try {
+            const parsed = JSON.parse(savedSession);
+            if (parsed?.username === username) {
+              localStorage.removeItem("casafinder_user_session");
+            }
+          } catch {}
+        }
         logActivity(`Deleted user account`, user.name || username, "reject");
         showNotif({ type: "success", title: "Account Deleted", message: `Na-delete na ang account ni ${user.name} (@${user.username}).` });
       },

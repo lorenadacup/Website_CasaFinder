@@ -213,7 +213,15 @@ export async function upsertUser(user: any) {
   if (error) throw error;
 }
 
-// ─── PROPERTY HELPERS ─────────────────────────────────────────────────────────
+export async function deleteUser(username: string) {
+  const { error } = await supabase
+    .from('users')
+    .delete()
+    .eq('username', username);
+  if (error) throw error;
+}
+
+
 
 export function dbToAppProperty(row: any): Property {
   return {
