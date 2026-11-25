@@ -411,8 +411,8 @@ export default function App() {
   useEffect(() => {
     // Load properties from Supabase on mount
     getAllProperties().then(setPropertiesList).catch(console.error);
-    // Real-time subscription
-    const unsub = subscribeToProperties(setPropertiesList);
+    // Real-time subscription — incremental updates via payload
+    const unsub = subscribeToProperties((updater) => setPropertiesList(updater));
     return unsub;
   }, []);
 
@@ -429,8 +429,8 @@ export default function App() {
         setRegisteredUsers(users as any);
       }
     }).catch(console.error);
-    // Real-time subscription
-    const unsub = subscribeToUsers((users) => setRegisteredUsers(users as any));
+    // Real-time subscription — incremental updates via payload
+    const unsub = subscribeToUsers((updater) => setRegisteredUsers(updater));
     return unsub;
   }, []);
 
@@ -2089,6 +2089,27 @@ export default function App() {
                     {authMode === "signup" ? (prefLanguage === "tagalog" ? "Gumawa ng Account 🚀" : "Create Account 🚀") : (prefLanguage === "tagalog" ? "Mag-log In 🚀" : "Log In 🚀")}
                   </button>
                 </form>
+
+                {/* Continue as Guest — right after Log In, most visible */}
+                {authMode === "login" && (
+                  <>
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex-1 h-px bg-slate-200" />
+                      <span className="text-[10px] text-slate-400 font-medium shrink-0">or</span>
+                      <div className="flex-1 h-px bg-slate-200" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setUserSession({ role: "guest", name: "Guest", username: "guest" })}
+                      className="w-full py-3.5 border-2 border-indigo-100 hover:border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-700 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2.5 active:scale-95 shadow-sm group"
+                    >
+                      <span className="text-base">👀</span>
+                      <span>Continue as Guest</span>
+                      <span className="ml-auto text-[10px] text-indigo-400 font-normal bg-indigo-100 group-hover:bg-indigo-200 px-2 py-0.5 rounded-full transition-colors">Browse only</span>
+                    </button>
+                  </>
+                )}
+
                 {authMode === "login" && (
                   <button type="button" onClick={() => { setAuthMode("adminLogin"); setLoginRole("admin"); setLoginUsername(""); setLoginPassword(""); setLoginError(""); }}
                     className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl transition-all cursor-pointer">
@@ -2115,18 +2136,6 @@ export default function App() {
                       <div className="text-[10px] text-amber-500 mt-0.5">🛡️ System</div>
                     </button>
                   </div>
-
-
-                  {/* Continue as Guest */}
-                  <button
-                    type="button"
-                    onClick={() => setUserSession({ role: "guest", name: "Guest", username: "guest" })}
-                    className="w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-stone-400 bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-stone-700 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <span>👤</span>
-                    <span>Continue as Guest</span>
-                    <span className="text-[10px] text-stone-400 font-normal">(Limited access)</span>
-                  </button>
                 </div>
               </div>
             )}
@@ -2312,28 +2321,6 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 flex flex-col space-y-5">
-
-        {/* Guest Banner */}
-        {isGuest && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-lg shrink-0">👤</span>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Browsing as Guest</p>
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
-                  You can browse listings and view the map. Sign up or log in to contact landlords, leave reviews, and use AI Matching.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setUserSession(null)}
-              className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95"
-            >
-              Sign In
-            </button>
-          </div>
-        )}
 
         {/* Search Panel - Only visible for Students */}
         {userSession.role === "student" && (

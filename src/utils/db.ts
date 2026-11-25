@@ -9,11 +9,10 @@ import { Property } from '../data/properties';
 // ─── USER TYPES ───────────────────────────────────────────────────────────────
 
 export interface DbUser {
-  id?: string;
   username: string;
   name: string;
   role: 'student' | 'landlord' | 'admin';
-  password?: string;
+  password?: string; // stored as-is; never returned to UI via dbToAppUser
   email?: string;
   mobile?: string;
   school?: string;
@@ -46,12 +45,13 @@ export interface DbUser {
 
 // ─── USER HELPERS ─────────────────────────────────────────────────────────────
 
-/** Convert DB row to app user shape */
-export function dbToAppUser(row: any) {
+/** Convert DB row to app user shape — password is included only for auth checks */
+export function dbToAppUser(row: DbUser) {
   return {
     username: row.username,
     name: row.name,
-    role: row.role as 'student' | 'landlord' | 'admin',
+    role: row.role,
+    // password is kept for local login comparison but should never be displayed in UI
     password: row.password,
     email: row.email || '',
     mobile: row.mobile || '',
@@ -84,7 +84,7 @@ export function dbToAppUser(row: any) {
   };
 }
 
-/** Convert app user to DB row shape */
+/** Convert full app user to DB row shape (for insert/upsert) */
 export function appUserToDb(user: any): DbUser {
   return {
     username: user.username,
@@ -122,12 +122,53 @@ export function appUserToDb(user: any): DbUser {
   };
 }
 
+/**
+ * Convert only the provided app-side fields to DB column names.
+ * Used for partial updates — only sends the keys that were actually changed.
+ */
+function appFieldToDbField(key: string): string | null {
+  const map: Record<string, string> = {
+    name: 'name',
+    role: 'role',
+    password: 'password',
+    email: 'email',
+    mobile: 'mobile',
+    school: 'school',
+    bio: 'bio',
+    address: 'address',
+    emergencyContact: 'emergency_contact',
+    avatar: 'avatar',
+    facebook: 'facebook',
+    facebookLink: 'facebook_link',
+    permitNo: 'permit_no',
+    permitFile: 'permit_file',
+    permitStatus: 'permit_status',
+    accountStatus: 'account_status',
+    rejectionReason: 'rejection_reason',
+    age: 'age',
+    gender: 'gender',
+    occupation: 'occupation',
+    prefLocation: 'pref_location',
+    prefType: 'pref_type',
+    budgetMin: 'budget_min',
+    budgetMax: 'budget_max',
+    occupants: 'occupants',
+    moveIn: 'move_in',
+    stayDuration: 'stay_duration',
+    pets: 'pets',
+    smoking: 'smoking',
+    businessName: 'business_name',
+    yearsOperation: 'years_operation',
+  };
+  return map[key] ?? null;
+}
+
 // ─── USER OPERATIONS ──────────────────────────────────────────────────────────
 
 export async function getAllUsers() {
   const { data, error } = await supabase.from('users').select('*');
   if (error) throw error;
-  return (data || []).map(dbToAppUser);
+  return (data as DbUser[] || []).map(dbToAppUser);
 }
 
 export async function getUserByUsername(username: string) {
@@ -137,7 +178,7 @@ export async function getUserByUsername(username: string) {
     .eq('username', username)
     .single();
   if (error) return null;
-  return dbToAppUser(data);
+  return dbToAppUser(data as DbUser);
 }
 
 export async function createUser(user: any) {
@@ -147,8 +188,17 @@ export async function createUser(user: any) {
   if (error) throw error;
 }
 
-export async function updateUser(username: string, updates: any) {
-  const dbUpdates = appUserToDb({ username, ...updates });
+/**
+ * Partial update — only the keys present in `updates` are written.
+ * Other columns in the DB row are untouched.
+ */
+export async function updateUser(username: string, updates: Record<string, any>) {
+  const dbUpdates: Record<string, any> = {};
+  for (const [key, value] of Object.entries(updates)) {
+    const dbKey = appFieldToDbField(key);
+    if (dbKey) dbUpdates[dbKey] = value;
+  }
+  if (Object.keys(dbUpdates).length === 0) return;
   const { error } = await supabase
     .from('users')
     .update(dbUpdates)
@@ -289,9 +339,22 @@ export function subscribeToProperties(callback: (properties: Property[]) => void
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'properties' },
-      async () => {
-        const properties = await getAllProperties();
-        callback(properties);
+      (payload) => {
+        // Use payload for targeted incremental updates instead of full re-fetch
+        callback((prev: any) => {
+          if (payload.eventType === 'INSERT') {
+            const newProp = dbToAppProperty(payload.new);
+            return [newProp, ...prev];
+          }
+          if (payload.eventType === 'UPDATE') {
+            const updated = dbToAppProperty(payload.new);
+            return prev.map((p: Property) => p.id === updated.id ? updated : p);
+          }
+          if (payload.eventType === 'DELETE') {
+            return prev.filter((p: Property) => p.id !== payload.old.id);
+          }
+          return prev;
+        });
       }
     )
     .subscribe();
@@ -299,15 +362,28 @@ export function subscribeToProperties(callback: (properties: Property[]) => void
   return () => supabase.removeChannel(channel);
 }
 
-export function subscribeToUsers(callback: (users: any[]) => void) {
+export function subscribeToUsers(callback: (updater: any) => void) {
   const channel = supabase
     .channel('users-changes')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'users' },
-      async () => {
-        const users = await getAllUsers();
-        callback(users);
+      (payload) => {
+        // Incremental update — no full table re-fetch, no password broadcast
+        callback((prev: any[]) => {
+          if (payload.eventType === 'INSERT') {
+            const newUser = dbToAppUser(payload.new as DbUser);
+            return [...prev, newUser];
+          }
+          if (payload.eventType === 'UPDATE') {
+            const updated = dbToAppUser(payload.new as DbUser);
+            return prev.map((u) => u.username === updated.username ? updated : u);
+          }
+          if (payload.eventType === 'DELETE') {
+            return prev.filter((u) => u.username !== (payload.old as DbUser).username);
+          }
+          return prev;
+        });
       }
     )
     .subscribe();
