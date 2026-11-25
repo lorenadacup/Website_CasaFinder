@@ -1814,7 +1814,7 @@ export default function App() {
 
   if (!userSession) {
     return (
-      <div className="w-full bg-slate-50 text-slate-800 font-sans flex antialiased lg:h-screen lg:overflow-hidden">
+      <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans flex antialiased lg:h-screen lg:overflow-hidden">
 
         {/* LEFT HERO PANEL — desktop only */}
         <div className="hidden lg:flex lg:w-[44%] relative flex-col justify-between p-10 xl:p-14 overflow-hidden shrink-0 h-full">
@@ -1882,12 +1882,12 @@ export default function App() {
         </div>
 
         {/* RIGHT FORM PANEL */}
-        <div className="flex-1 flex justify-center p-5 sm:p-8 py-10 bg-[#ffffff] border-l border-slate-100 overflow-y-auto h-full">
+        <div className="flex-1 flex justify-center p-4 sm:p-8 py-8 bg-[#ffffff] border-l border-slate-100 overflow-y-auto lg:h-full min-h-screen">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="w-full max-w-sm sm:max-w-md"
+            className="w-full max-w-sm sm:max-w-md pb-8"
           >
             {/* Mobile logo */}
             <div className="flex lg:hidden flex-col items-center justify-center gap-4 mb-8">
