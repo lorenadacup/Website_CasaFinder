@@ -4820,7 +4820,7 @@ export default function App() {
                         ? "bg-pink-950/80 text-pink-300 border-pink-800"
                         : "bg-blue-950/80 text-blue-300 border-blue-800"
                         }`}>
-                        {userSession.role === "student" ? t("studentAccount") : t("landlordAccount")}
+                        {userSession.role === "student" ? t("studentAccount") : userSession.role === "landlord" ? t("landlordAccount") : userSession.role === "admin" ? "ADMIN ACCOUNT" : "GUEST"}
                       </span>
                     </div>
                     <p className="text-[10px] text-stone-300 font-light truncate mt-0.5">
@@ -5859,6 +5859,7 @@ export default function App() {
                         <span>{prefLanguage === "tagalog" ? "Mga Setting ng Notipikasyon at Mapa" : "Notification & Map Preferences"}</span>
                       </div>
 
+                      {userSession.role !== "guest" && (
                       <label className="flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700/80 rounded-2xl cursor-pointer hover:bg-stone-100/80 dark:hover:bg-stone-800 transition-colors">
                         <div className="flex items-center gap-3">
                           <Mail className="h-4 w-4 text-pink-600 dark:text-pink-400" />
@@ -5867,14 +5868,11 @@ export default function App() {
                             <span className="text-[10px] text-stone-500 dark:text-stone-400 font-light">{prefLanguage === "tagalog" ? "Makatanggap ng email updates sa mga bagong boarding house." : "Receive email updates about new boarding houses."}</span>
                           </div>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={prefEmailNotifications}
-                          onChange={(e) => setPrefEmailNotifications(e.target.checked)}
-                          className="h-4 w-4 accent-pink-600 rounded cursor-pointer"
-                        />
+                        <input type="checkbox" checked={prefEmailNotifications} onChange={(e) => setPrefEmailNotifications(e.target.checked)} className="h-4 w-4 accent-pink-600 rounded cursor-pointer" />
                       </label>
+                      )}
 
+                      {userSession.role !== "guest" && (
                       <label className="flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700/80 rounded-2xl cursor-pointer hover:bg-stone-100/80 dark:hover:bg-stone-800 transition-colors">
                         <div className="flex items-center gap-3">
                           <Phone className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -5883,13 +5881,9 @@ export default function App() {
                             <span className="text-[10px] text-stone-500 dark:text-stone-400 font-light">{prefLanguage === "tagalog" ? "Makatanggap ng text alert sa iyong cell phone number." : "Receive text alerts on your mobile phone number."}</span>
                           </div>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={prefSmsAlerts}
-                          onChange={(e) => setPrefSmsAlerts(e.target.checked)}
-                          className="h-4 w-4 accent-pink-600 rounded cursor-pointer"
-                        />
+                        <input type="checkbox" checked={prefSmsAlerts} onChange={(e) => setPrefSmsAlerts(e.target.checked)} className="h-4 w-4 accent-pink-600 rounded cursor-pointer" />
                       </label>
+                      )}
 
                       <label className="flex items-center justify-between p-3.5 bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700/80 rounded-2xl cursor-pointer hover:bg-stone-100/80 dark:hover:bg-stone-800 transition-colors">
                         <div className="flex items-center gap-3">
