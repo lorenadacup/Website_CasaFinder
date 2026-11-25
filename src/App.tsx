@@ -1890,11 +1890,11 @@ export default function App() {
             className="w-full max-w-sm sm:max-w-md pb-8"
           >
             {/* Mobile logo */}
-            <div className="flex lg:hidden flex-col items-center justify-center gap-4 mb-8">
-              <div className="h-32 w-32 rounded-full overflow-hidden ring-4 ring-pink-500/10 shadow-lg">
-                <img src="/casafinder-logo.png" alt="CasaFinder" className="w-full h-full object-contain bg-[#ffffff] p-2" />
+            <div className="flex lg:hidden flex-col items-center justify-center gap-2 mb-4">
+              <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-pink-500/10 shadow-md">
+                <img src="/casafinder-logo.png" alt="CasaFinder" className="w-full h-full object-contain bg-[#ffffff] p-1" />
               </div>
-              <span className="font-black text-slate-800 text-3xl tracking-tight">CasaFinder</span>
+              <span className="font-black text-slate-800 text-xl tracking-tight">CasaFinder</span>
             </div>
 
             {/* ADMIN LOGIN */}
@@ -2045,12 +2045,12 @@ export default function App() {
               </div>
 
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-800">
+                  <h2 className="text-xl sm:text-3xl font-extrabold text-stone-800">
                     {authMode === "signup" ? "Create account" : "Sign in"}
                   </h2>
-                  <p className="text-stone-500 text-sm mt-1">
+                  <p className="text-stone-500 text-xs mt-0.5">
                     {authMode === "signup"
                       ? (prefLanguage === "tagalog" ? "Gumawa ng CasaFinder account." : "Sign up to find or list properties in Gumaca.")
                       : (prefLanguage === "tagalog" ? "Mag-log in sa iyong account." : "Log in to your CasaFinder account.")}
@@ -2058,50 +2058,50 @@ export default function App() {
                 </div>
                 <div className="flex bg-stone-100 border border-stone-200 rounded-xl p-1 gap-1">
                   <button type="button" onClick={() => { setAuthMode("login"); setLoginUsername(""); setLoginPassword(""); setSignupEmail(""); setLoginError(""); }}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${authMode === "login" ? "bg-white text-stone-900 shadow-xs border border-stone-200/50" : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"}`}>
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${authMode === "login" ? "bg-white text-stone-900 shadow-xs border border-stone-200/50" : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"}`}>
                     {t("loginTab")}
                   </button>
                   <button type="button" onClick={() => { setAuthMode("signup"); setLoginUsername(""); setLoginPassword(""); setSignupEmail(""); setLoginError(""); }}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${authMode === "signup" ? "bg-white text-stone-900 shadow-xs border border-stone-200/50" : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"}`}>
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${authMode === "signup" ? "bg-white text-stone-900 shadow-xs border border-stone-200/50" : "text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"}`}>
                     {t("signupTab")}
                   </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">{t("selectRole")}</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">{t("selectRole")}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => { setLoginRole("student"); setLoginError(""); }}
-                      className={`py-3 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 border ${loginRole === "student" ? "bg-pink-500 border-pink-400 text-white shadow-md shadow-pink-500/20" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`}>
+                      className={`py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 border ${loginRole === "student" ? "bg-pink-500 border-pink-400 text-white shadow-md shadow-pink-500/20" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`}>
                       <Users className="h-4 w-4" /> Tenant 🎓
                     </button>
                     <button type="button" onClick={() => { setLoginRole("landlord"); setLoginError(""); }}
-                      className={`py-3 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 border ${loginRole === "landlord" ? "bg-blue-500 border-blue-400 text-white shadow-md shadow-blue-500/20" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`}>
+                      className={`py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 border ${loginRole === "landlord" ? "bg-blue-500 border-blue-400 text-white shadow-md shadow-blue-500/20" : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900"}`}>
                       <Building className="h-4 w-4" /> Landlord 🏠
                     </button>
                   </div>
                 </div>
-                {loginError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">⚠️ {loginError}</div>}
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                {loginError && <div className="p-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">⚠️ {loginError}</div>}
+                <form onSubmit={handleLoginSubmit} className="space-y-2.5">
                   {authMode === "signup" && (
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">{prefLanguage === "tagalog" ? "Email o Mobile Number" : "Email or Mobile Number"}</label>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">{prefLanguage === "tagalog" ? "Email o Mobile Number" : "Email or Mobile Number"}</label>
                       <input type="text" required
                         placeholder={loginRole === "student" ? "e.g. juan@example.com or 09123456789" : "e.g. nena@example.com or 09987654321"}
                         value={signupEmail} onChange={e => setSignupEmail(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all" />
+                        className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl px-3 py-2.5 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all" />
                     </div>
                   )}
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
                       {authMode === "signup" ? (prefLanguage === "tagalog" ? "Gumawa ng Username" : "Create Username") : (prefLanguage === "tagalog" ? "Username, Email, o Mobile" : "Username, Email, or Mobile")}
                     </label>
                     <input type="text" required
-                      placeholder={authMode === "signup" ? (loginRole === "student" ? "e.g. juan.student" : "e.g. nena.landlord") : "e.g. juan.student or juan@email.com"}
+                      placeholder={authMode === "signup" ? (loginRole === "student" ? "e.g. juan.student" : "e.g. nena.landlord") : "Username or email"}
                       value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
-                      className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl px-4 py-3 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
+                      className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl px-3 py-2.5 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Password</label>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Password</label>
                       {authMode === "login" && (
                         <button type="button" onClick={() => { setAuthMode("forgot"); setLoginError(""); setForgotQuery(loginUsername || ""); setForgotFoundUser(null); setForgotNewPassword(""); setForgotConfirmPassword(""); setForgotSuccessMsg(""); }}
                           className="text-xs text-pink-600 hover:text-pink-700 font-bold hover:underline cursor-pointer">{t("forgotPasswordLink")}</button>
@@ -2110,13 +2110,13 @@ export default function App() {
                     <div className="relative">
                       <input type={showPassword ? "text" : "password"} required placeholder="••••••••"
                         value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl pl-4 pr-11 py-3 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer">
+                        className="w-full bg-stone-50 border border-stone-200 focus:border-pink-500/50 rounded-xl pl-3 pr-10 py-2.5 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer">
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
-                  <button type="submit" disabled={!usersLoaded} className={`w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-extrabold py-3.5 rounded-xl text-sm shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${!usersLoaded ? "opacity-70 cursor-not-allowed" : ""}`}>
+                  <button type="submit" disabled={!usersLoaded} className={`w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 hover:opacity-90 text-white font-extrabold py-2.5 rounded-xl text-sm shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${!usersLoaded ? "opacity-70 cursor-not-allowed" : ""}`}>
                     {!usersLoaded ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
                     ) : authMode === "signup" ? (prefLanguage === "tagalog" ? "Gumawa ng Account 🚀" : "Create Account 🚀") : (prefLanguage === "tagalog" ? "Mag-log In 🚀" : "Log In 🚀")}
@@ -2134,7 +2134,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setUserSession({ role: "guest", name: "Guest", username: "guest" })}
-                      className="w-full py-3.5 border-2 border-indigo-100 hover:border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-700 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2.5 active:scale-95 shadow-sm group"
+                      className="w-full py-2.5 border-2 border-indigo-100 hover:border-indigo-300 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-700 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2.5 active:scale-95 shadow-sm group"
                     >
                       <span className="text-base">👀</span>
                       <span>Continue as Guest</span>
@@ -2145,7 +2145,7 @@ export default function App() {
 
                 {authMode === "login" && (
                   <button type="button" onClick={() => { setAuthMode("adminLogin"); setLoginRole("admin"); setLoginUsername(""); setLoginPassword(""); setLoginError(""); }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl transition-all cursor-pointer">
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl transition-all cursor-pointer">
                     <Shield className="h-3.5 w-3.5" />
                     {prefLanguage === "tagalog" ? "Exclusive Admin Portal 🔒" : "Exclusive System Admin Portal 🔒"}
                   </button>
