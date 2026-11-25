@@ -680,8 +680,8 @@ export default function App() {
       };
 
       setRegisteredUsers(prev => [...prev, newUser]);
-      // Save new user to Supabase
-      createUser(newUser).catch((err) => {
+      // Save new user to Supabase — upsert to avoid duplicate key errors
+      upsertUser(newUser).catch((err) => {
         console.error("Failed to save user to Supabase:", err);
         showNotif({ type: "error", title: "Sync Error", message: `DB Error: ${err?.message || JSON.stringify(err)}` });
       });
@@ -788,7 +788,7 @@ export default function App() {
       };
       // Reset profile modal state before switching user
       setShowProfileModal(false);
-      setProfileTab("profile");
+      setProfileTab("menu");
       setProfileEditName("");
       setProfileEditEmail("");
       setProfileEditMobile("");
@@ -1039,7 +1039,7 @@ export default function App() {
     setUserSession(null);
     setSelectedProperty(null);
     setShowProfileModal(false);
-    setProfileTab("profile");
+    setProfileTab("menu");
     setProfileEditName("");
     setProfileEditEmail("");
     setProfileEditMobile("");
