@@ -333,25 +333,23 @@ export async function updatePropertyReviews(id: string, reviews: any[]) {
 
 // ─── REAL-TIME SUBSCRIPTIONS ──────────────────────────────────────────────────
 
-export function subscribeToProperties(callback: (properties: Property[]) => void) {
+export function subscribeToProperties(callback: (updater: any) => void) {
   const channel = supabase
     .channel('properties-changes')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'properties' },
       (payload) => {
-        // Use payload for targeted incremental updates instead of full re-fetch
-        callback((prev: any) => {
+        callback((prev: Property[]) => {
           if (payload.eventType === 'INSERT') {
-            const newProp = dbToAppProperty(payload.new);
-            return [newProp, ...prev];
+            return [dbToAppProperty(payload.new), ...prev];
           }
           if (payload.eventType === 'UPDATE') {
             const updated = dbToAppProperty(payload.new);
-            return prev.map((p: Property) => p.id === updated.id ? updated : p);
+            return prev.map((p) => p.id === updated.id ? updated : p);
           }
           if (payload.eventType === 'DELETE') {
-            return prev.filter((p: Property) => p.id !== payload.old.id);
+            return prev.filter((p) => p.id !== payload.old.id);
           }
           return prev;
         });
@@ -359,7 +357,7 @@ export function subscribeToProperties(callback: (properties: Property[]) => void
     )
     .subscribe();
 
-  return () => supabase.removeChannel(channel);
+  return () => { supabase.removeChannel(channel); };
 }
 
 export function subscribeToUsers(callback: (updater: any) => void) {
@@ -369,11 +367,9 @@ export function subscribeToUsers(callback: (updater: any) => void) {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'users' },
       (payload) => {
-        // Incremental update — no full table re-fetch, no password broadcast
         callback((prev: any[]) => {
           if (payload.eventType === 'INSERT') {
-            const newUser = dbToAppUser(payload.new as DbUser);
-            return [...prev, newUser];
+            return [...prev, dbToAppUser(payload.new as DbUser)];
           }
           if (payload.eventType === 'UPDATE') {
             const updated = dbToAppUser(payload.new as DbUser);
@@ -388,5 +384,5 @@ export function subscribeToUsers(callback: (updater: any) => void) {
     )
     .subscribe();
 
-  return () => supabase.removeChannel(channel);
+  return () => { supabase.removeChannel(channel); };
 }

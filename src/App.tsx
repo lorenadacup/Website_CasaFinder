@@ -409,18 +409,14 @@ export default function App() {
   const [propertiesList, setPropertiesList] = useState<Property[]>([]);
 
   useEffect(() => {
-    // Load properties from Supabase on mount
     getAllProperties().then(setPropertiesList).catch(console.error);
-    // Real-time subscription — incremental updates via payload
     const unsub = subscribeToProperties((updater) => setPropertiesList(updater));
-    return unsub;
+    return () => { unsub(); };
   }, []);
 
   useEffect(() => {
-    // Load users from Supabase on mount, seed defaults if empty
     getAllUsers().then(async (users) => {
       if (users.length === 0) {
-        // First run — seed default demo users
         for (const u of DEFAULT_DEMO_USERS) {
           await upsertUser(u).catch(console.error);
         }
@@ -429,9 +425,8 @@ export default function App() {
         setRegisteredUsers(users as any);
       }
     }).catch(console.error);
-    // Real-time subscription — incremental updates via payload
     const unsub = subscribeToUsers((updater) => setRegisteredUsers(updater));
-    return unsub;
+    return () => { unsub(); };
   }, []);
 
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
