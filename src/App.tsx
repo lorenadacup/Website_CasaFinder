@@ -5906,7 +5906,6 @@ export default function App() {
 
                 {/* Modal Footer Buttons */}
                 <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
-                  {/* Back to Settings (shown when inside a sub-tab) */}
                   {profileTab !== "menu" && (
                     <button
                       type="button"
@@ -5917,8 +5916,7 @@ export default function App() {
                       <span>{prefLanguage === "tagalog" ? "Bumalik" : "Back"}</span>
                     </button>
                   )}
-                  {profileTab === "menu" && <span />}
-                  <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-3 ${profileTab === "menu" ? "ml-auto" : ""}`}>
                   <button
                     type="button"
                     onClick={() => setShowProfileModal(false)}
