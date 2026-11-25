@@ -140,8 +140,8 @@ interface ActiveSession {
 const DEFAULT_DEMO_USERS = [
   { name: "Juan Dela Cruz", username: "juan.student", role: "student" as const, password: "123", email: "juan.delacruz@gmail.com", mobile: "09171234567", facebook: "https://facebook.com/juan.delacruz", school: "SLSU Gumaca Campus", bio: "Tenant & College Student looking for room near SLSU Campus", address: "Brgy. Mabini, Gumaca, Quezon", emergencyContact: "Maria Dela Cruz (09181112222)", avatar: "🎓", permitNo: "", permitFile: "", permitStatus: "", accountStatus: "approved" as const },
   { name: "Aling Nena", username: "nena.landlord", role: "landlord" as const, password: "123", email: "alingnena.housing@gmail.com", mobile: "09987654321", facebook: "https://facebook.com/alingnena.housing", school: "Nena's Student & Worker Residences", bio: "Owner of Nena's Student & Worker Residences in Brgy. Tabing Dagat, Gumaca. Providing clean and safe lodgings for tenants since 2018.", address: "Brgy. Tabing Dagat, Gumaca, Quezon", emergencyContact: "Barangay Office (042-311-1234)", avatar: "🏠", permitNo: "2026-0881", permitFile: "Mayors_Permit_2026.pdf", permitStatus: "Verified", accountStatus: "approved" as const },
-  { name: "Gumaca LGU Housing Admin", username: "admin.gumaca", role: "admin" as const, password: "admin", email: "admin.housing@gumaca.gov.ph", mobile: "09190008888", facebook: "https://facebook.com/gumaca.lgu", school: "Municipal Housing Regulatory Office", bio: "Authorized Municipal Housing Regulatory Officer for Gumaca, Quezon. Overseeing safety compliance, mayor's permits, and student dorm welfare.", address: "Municipal Hall, Brgy. San Diego, Gumaca, Quezon", emergencyContact: "Mayor's Office (042-311-9999)", avatar: "🛡️", permitNo: "SYS-ADMIN-01", permitFile: "LGU_System_Auth.pdf", permitStatus: "System Admin", accountStatus: "approved" as const },
-  { name: "Campus Housing Officer", username: "admin.campus", role: "admin" as const, password: "admin", email: "housing.officer@slsu.edu.ph", mobile: "09190007777", facebook: "https://facebook.com/slsu.gumaca.housing", school: "SLSU & EQC Student Affairs Office", bio: "Official Student Housing Coordinator for SLSU & Eastern Quezon College. Verifying accreditation and safety for student lodgings.", address: "SLSU Campus, Brgy. Mabini, Gumaca, Quezon", emergencyContact: "Campus Security (042-311-8888)", avatar: "👑", permitNo: "SYS-ADMIN-02", permitFile: "SLSU_Officer_Auth.pdf", permitStatus: "System Admin", accountStatus: "approved" as const }
+  { name: "Gumaca LGU Housing Admin", username: "gumaca.admin", role: "admin" as const, password: "Gumaca@2026!", email: "admin.housing@gumaca.gov.ph", mobile: "09190008888", facebook: "https://facebook.com/gumaca.lgu", school: "Municipal Housing Regulatory Office", bio: "Authorized Municipal Housing Regulatory Officer for Gumaca, Quezon. Overseeing safety compliance, mayor's permits, and student dorm welfare.", address: "Municipal Hall, Brgy. San Diego, Gumaca, Quezon", emergencyContact: "Mayor's Office (042-311-9999)", avatar: "🛡️", permitNo: "SYS-ADMIN-01", permitFile: "LGU_System_Auth.pdf", permitStatus: "System Admin", accountStatus: "approved" as const },
+  { name: "Campus Housing Officer", username: "campus.admin", role: "admin" as const, password: "Campus@2026!", email: "housing.officer@slsu.edu.ph", mobile: "09190007777", facebook: "https://facebook.com/slsu.gumaca.housing", school: "SLSU & EQC Student Affairs Office", bio: "Official Student Housing Coordinator for SLSU & Eastern Quezon College. Verifying accreditation and safety for student lodgings.", address: "SLSU Campus, Brgy. Mabini, Gumaca, Quezon", emergencyContact: "Campus Security (042-311-8888)", avatar: "👑", permitNo: "SYS-ADMIN-02", permitFile: "SLSU_Officer_Auth.pdf", permitStatus: "System Admin", accountStatus: "approved" as const }
 ];
 
 export default function App() {
@@ -744,7 +744,7 @@ export default function App() {
       setUserSession(session);
       localStorage.setItem("casafinder_user_session", JSON.stringify(session));
 
-      const isDemo = ["juan.student", "nena.landlord", "admin.gumaca", "admin.campus"].includes(user.username);
+      const isDemo = ["juan.student", "nena.landlord", "gumaca.admin", "campus.admin"].includes(user.username);
 
       if (!isDemo) {
         // Mark as onboarded so onboarding never shows again on login
@@ -1874,13 +1874,13 @@ export default function App() {
                   <p className="text-stone-500 text-sm mt-1">Restricted — authorized officers only.</p>
                 </div>
                 <div className="p-3.5 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-xs text-amber-800 leading-relaxed">
-                  2 authorized accounts: <span className="font-mono text-amber-600 font-bold">admin.gumaca</span> &amp; <span className="font-mono text-amber-600 font-bold">admin.campus</span>
+                  2 authorized accounts: <span className="font-mono text-amber-600 font-bold">gumaca.admin</span> &amp; <span className="font-mono text-amber-600 font-bold">campus.admin</span>
                 </div>
                 {loginError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">⚠️ {loginError}</div>}
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold uppercase tracking-widest text-stone-500">Admin Username</label>
-                    <input type="text" required placeholder="admin.gumaca or admin.campus" value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
+                    <input type="text" required placeholder="gumaca.admin or campus.admin" value={loginUsername} onChange={e => setLoginUsername(e.target.value)}
                       className="w-full bg-stone-50 border border-stone-200 focus:border-amber-500 focus:bg-white rounded-xl px-4 py-3 text-sm text-stone-800 font-mono placeholder-stone-400 focus:outline-none transition-all" />
                   </div>
                   <div className="space-y-1.5">
