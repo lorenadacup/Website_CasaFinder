@@ -724,17 +724,22 @@ export default function NeighborhoodMap({
         setShowSearchResults={setShowSearchResults}
         setSearchQuery={setSearchQuery}
         triggerArrowHighlight={(lat, lng, title, desc, zoom) => {
-          // If this is a barangay result, highlight its polygon instead of arrow
-          const isBarangay = title.includes("Barangay") || title.includes("Brgy.");
+          // If this is a barangay result — never show arrow, pan/zoom only
+          const isBarangay = title.includes("Barangay") || title.includes("Brgy.") || title.includes("📍");
           const brgyId = normalizeBarangayId(title);
-          if (isBarangay && barangayPolygons[brgyId]) {
-            setHighlightedBarangayId(brgyId);
-            // Boundary stays visible until user searches something else
-            // Fit map to the polygon bounds
-            const poly = barangayPolygons[brgyId];
-            if (poly && poly.vertices.length >= 3) {
-              const bounds = L.latLngBounds(poly.vertices.map(([la, lo]) => [la, lo] as [number, number]));
-              leafletMapRef.current?.flyToBounds(bounds, { padding: [50, 50], duration: 1.0 });
+          if (isBarangay) {
+            if (barangayPolygons[brgyId]) {
+              // Has saved boundary — highlight polygon and fit to bounds
+              setHighlightedBarangayId(brgyId);
+              const poly = barangayPolygons[brgyId];
+              if (poly && poly.vertices.length >= 3) {
+                const bounds = L.latLngBounds(poly.vertices.map(([la, lo]) => [la, lo] as [number, number]));
+                leafletMapRef.current?.flyToBounds(bounds, { padding: [50, 50], duration: 1.0 });
+              }
+            } else {
+              // No boundary yet — just pan to approximate location, no arrow
+              setHighlightedBarangayId(null);
+              leafletMapRef.current?.flyTo([lat, lng], 16, { animate: true, duration: 1.0 });
             }
           } else {
             setHighlightedBarangayId(null);
