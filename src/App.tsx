@@ -2254,7 +2254,7 @@ export default function App() {
           <button
             type="button"
             onClick={isGuest ? () => setUserSession(null) : () => handleOpenProfileTab("profile")}
-            className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-sm px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40 flex items-center gap-1.5"
+            className="bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 text-stone-900 font-bold text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 rounded-lg transition-all active:scale-95 shadow-md shadow-amber-500/40 flex items-center gap-1.5 max-w-[100px] sm:max-w-none truncate"
           >
             {isGuest ? "Sign In" : userSession.name}
           </button>
@@ -2651,13 +2651,13 @@ export default function App() {
                 </div>
               </div>
               {/* View switcher pill */}
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-1 gap-1">
+              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-1 gap-1 w-full sm:w-auto overflow-x-auto">
                 <button type="button" onClick={() => setAdminView("listings")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${adminView === "listings" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
+                  className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${adminView === "listings" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
                   <Home className="h-3.5 w-3.5" /> Listings
                 </button>
                 <button type="button" onClick={() => { setAdminView("accounts"); setSelectedLandlords([]); }}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${adminView === "accounts" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
+                  className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${adminView === "accounts" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
                   <Users className="h-3.5 w-3.5" /> Accounts
                   {registeredUsers.filter(u => u.role === "landlord" && (u.accountStatus === "pending" || !u.accountStatus)).length > 0 && (
                     <span className="px-1.5 py-0.5 bg-red-500 text-white rounded-full text-[10px] font-black leading-none">
@@ -2666,12 +2666,12 @@ export default function App() {
                   )}
                 </button>
                 <button type="button" onClick={() => setAdminView("analytics")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${adminView === "analytics" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
-                  📊 Analytics
+                  className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${adminView === "analytics" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
+                  📊 <span className="hidden sm:inline">Analytics</span>
                 </button>
                 <button type="button" onClick={() => setAdminView("activitylog")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${adminView === "activitylog" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
-                  📋 Activity Log
+                  className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${adminView === "activitylog" ? "bg-amber-500 text-stone-900 shadow-sm" : "text-stone-400 hover:text-white hover:bg-white/10"}`}>
+                  📋 <span className="hidden sm:inline">Activity Log</span>
                   {activityLog.length > 0 && <span className="px-1.5 py-0.5 bg-white/20 text-white rounded-full text-[10px] font-black leading-none">{activityLog.length}</span>}
                 </button>
               </div>
