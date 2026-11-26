@@ -644,7 +644,6 @@ export default function NeighborhoodMap({
 
   // Build search results — static locations + dynamically saved barangay polygons
   const savedBarangaySearchEntries = Object.entries(barangayPolygons).map(([, poly]) => {
-    // Compute centroid of polygon as the "location" for panning
     const avgLat = poly.vertices.reduce((s, [lat]) => s + lat, 0) / poly.vertices.length;
     const avgLng = poly.vertices.reduce((s, [, lng]) => s + lng, 0) / poly.vertices.length;
     return {
@@ -655,8 +654,18 @@ export default function NeighborhoodMap({
     };
   });
 
+  // IDs of barangays that already have a saved polygon — exclude their static duplicates
+  const savedBarangayIds = new Set(Object.keys(barangayPolygons));
+
   const searchResults = [
-    ...createSearchLocations(properties),
+    ...createSearchLocations(properties).filter(item => {
+      // If this static entry is a barangay with a saved polygon, skip it (polygon entry takes priority)
+      if (item.name.startsWith("📍")) {
+        const id = normalizeBarangayId(item.name);
+        if (savedBarangayIds.has(id)) return false;
+      }
+      return true;
+    }),
     ...savedBarangaySearchEntries,
   ].filter(item =>
     searchQuery.trim() ? (
