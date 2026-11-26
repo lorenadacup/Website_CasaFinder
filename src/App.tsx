@@ -158,7 +158,20 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(DEFAULT_DEMO_USERS);
 
-  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(null);
+  const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(() => {
+    // Restore session immediately from localStorage — will be validated against Supabase after load
+    const saved = localStorage.getItem("casafinder_user_session");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.username) {
+          const dedicatedAvatar = localStorage.getItem(`casafinder_avatar_${parsed.username}`);
+          return { ...parsed, avatar: dedicatedAvatar || parsed.avatar };
+        }
+      } catch {}
+    }
+    return null;
+  });
 
   // Login Form States
   const [loginRole, setLoginRole] = useState<"student" | "landlord" | "admin">("student");
