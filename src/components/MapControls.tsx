@@ -46,29 +46,29 @@ export default function MapControls({
   return (
     <>
       {/* Map Controls Bar — single compact row */}
-      <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-1.5 bg-stone-900/90 backdrop-blur-sm border border-stone-700/60 rounded-xl px-2.5 py-1.5 shadow-2xl">
+      <div className="absolute top-3 left-2 right-2 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-30 flex items-center gap-1 sm:gap-1.5 bg-stone-900/90 backdrop-blur-sm border border-stone-700/60 rounded-xl px-2 py-1.5 sm:px-2.5 shadow-2xl overflow-x-auto">
 
         {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+        <div className="relative shrink-0">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 text-stone-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setShowSearchResults(true)}
-            className="w-44 sm:w-56 pl-8 pr-2.5 py-1.5 bg-stone-800/80 border border-stone-700/60 rounded-lg text-stone-100 placeholder-stone-500 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/30 transition-all"
+            className="w-28 sm:w-44 md:w-56 pl-6 sm:pl-8 pr-2 py-1.5 bg-stone-800/80 border border-stone-700/60 rounded-lg text-stone-100 placeholder-stone-500 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/30 transition-all"
           />
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-stone-700/60" />
+        <div className="w-px h-5 bg-stone-700/60 shrink-0" />
 
         {/* Map Mode Toggle */}
-        <div className="flex items-center gap-0.5 bg-stone-800/50 border border-stone-700/40 rounded-lg p-0.5">
+        <div className="flex items-center gap-0.5 bg-stone-800/50 border border-stone-700/40 rounded-lg p-0.5 shrink-0">
           <button
             onClick={() => setMapMode("satellite")}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${mapMode === "satellite"
+            className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${mapMode === "satellite"
               ? "bg-gradient-to-r from-emerald-900/80 to-teal-900/80 text-emerald-300 border border-emerald-600/40"
               : "text-stone-400 hover:text-stone-200 hover:bg-stone-700/50"
               }`}
@@ -77,7 +77,7 @@ export default function MapControls({
           </button>
           <button
             onClick={() => setMapMode("streets")}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${mapMode === "streets"
+            className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${mapMode === "streets"
               ? "bg-gradient-to-r from-sky-900/80 to-blue-900/80 text-sky-300 border border-sky-600/40"
               : "text-stone-400 hover:text-stone-200 hover:bg-stone-700/50"
               }`}
@@ -86,14 +86,14 @@ export default function MapControls({
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-stone-700/60" />
+        {/* Divider — hidden on mobile */}
+        <div className="hidden sm:block w-px h-5 bg-stone-700/60 shrink-0" />
 
-        {/* Grid — icon only */}
+        {/* Grid — hidden on mobile */}
         <button
           onClick={() => setShowGrid(!showGrid)}
           title="Toggle Grid"
-          className={`p-1.5 rounded-lg transition-all ${showGrid
+          className={`hidden sm:flex p-1.5 rounded-lg transition-all shrink-0 ${showGrid
             ? "bg-gradient-to-r from-amber-900/70 to-orange-900/70 text-amber-300 border border-amber-600/40"
             : "text-stone-400 hover:text-stone-200 hover:bg-stone-700/60 border border-stone-700/40"
             }`}
@@ -101,7 +101,7 @@ export default function MapControls({
           <Compass className="w-4 h-4" />
         </button>
 
-        {/* Quick Jump dropdown — shorter */}
+        {/* Quick Jump dropdown */}
         <select
           onChange={(e) => {
             const arrowId = e.target.value;
@@ -111,9 +111,9 @@ export default function MapControls({
             }
             e.target.value = "";
           }}
-          className="px-2 py-1.5 rounded-lg bg-stone-800/60 text-stone-400 hover:text-stone-200 border border-stone-700/40 text-xs font-medium transition-all cursor-pointer max-w-[130px]"
+          className="px-1.5 py-1.5 rounded-lg bg-stone-800/60 text-stone-400 hover:text-stone-200 border border-stone-700/40 text-xs font-medium transition-all cursor-pointer max-w-[90px] sm:max-w-[130px] shrink-0"
         >
-          <option value="">📍 Quick Jump</option>
+          <option value="">📍 Jump</option>
           {Object.entries(DEFAULT_ARROW_MARKERS).map(([arrowId, arrow]) => (
             <option key={arrowId} value={arrowId}>
               {arrow.title}

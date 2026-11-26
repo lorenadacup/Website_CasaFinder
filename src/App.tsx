@@ -4663,27 +4663,23 @@ export default function App() {
             className="fixed inset-0 z-50 bg-[#faf9f6] flex flex-col"
           >
             {/* Map Page Header */}
-            <header className="bg-white border-b border-stone-200 px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4 shadow-xs shrink-0">
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                <div className="p-2 sm:p-2.5 bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-100 flex items-center justify-center shrink-0">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+            <header className="bg-white border-b border-stone-200 px-3 py-2 sm:px-6 sm:py-4 flex items-center justify-between gap-2 shadow-xs shrink-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="p-1.5 sm:p-2.5 bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-100 flex items-center justify-center shrink-0">
+                  <MapPin className="h-4 w-4" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display font-bold text-stone-900 text-sm sm:text-base md:text-lg leading-snug truncate">
-                    {prefLanguage === "tagalog" ? "Mapa ng mga Tuluyan sa Gumaca 🗺️" : "Gumaca Housing & Dormitory Map 🗺️"}
-                  </h2>
-                  <p className="text-[10px] text-stone-400 font-light mt-0.5 hidden xs:block truncate">
-                    {prefLanguage === "tagalog" ? "Hanapin sa mapa ang mga boarding house malapit sa SLSU Gumaca Campus & Eastern Quezon College" : "Visually locate boarding rooms and apartments near SLSU Gumaca Campus & Eastern Quezon College"}
-                  </p>
-                </div>
+                <h2 className="font-display font-bold text-stone-900 text-sm sm:text-lg leading-snug truncate">
+                  {prefLanguage === "tagalog" ? "Mapa ng mga Tuluyan 🗺️" : "Gumaca Housing & Dormitory Map 🗺️"}
+                </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setShowMapPage(false)}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer w-full sm:w-auto shrink-0"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
               >
-                <X className="h-4 w-4" />
-                <span>{prefLanguage === "tagalog" ? "Isara ang Mapa" : "Close Map view"}</span>
+                <X className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{prefLanguage === "tagalog" ? "Isara ang Mapa" : "Close Map view"}</span>
+                <span className="sm:hidden">Close</span>
               </button>
             </header>
 
