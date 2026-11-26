@@ -9,7 +9,7 @@ export const BARANGAY_POLYGON_KEY = "casafinder_barangay_polygons_v1";
 // Re-export Supabase functions for use in other components
 export { getAllBarangayBoundaries, upsertBarangayBoundary, deleteBarangayBoundary };
 
-const BARANGAY_COLORS: Record<string, string> = {
+export const BARANGAY_COLORS: Record<string, string> = {
   "tabing-dagat":     "#06b6d4",
   "villa-nava":       "#8b5cf6",
   "peñafrancia":      "#f59e0b",

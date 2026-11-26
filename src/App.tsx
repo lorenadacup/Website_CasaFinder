@@ -4793,6 +4793,7 @@ export default function App() {
                     }}
                     selectedSchoolId={selectedSchoolIdForMap}
                     showNotif={showNotif}
+                    isAdmin={userSession?.role === "admin"}
                   />
                 </div>
               </div>

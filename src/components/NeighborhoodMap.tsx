@@ -21,6 +21,7 @@ import BarangayBoundarySystem, {
   normalizeBarangayId,
   type BarangayPolygonsMap,
 } from "./BarangayBoundarySystem";
+import BarangayDrawingTool from "./BarangayDrawingTool";
 
 interface NeighborhoodMapProps {
   properties: Property[];
@@ -30,6 +31,7 @@ interface NeighborhoodMapProps {
   aiMatches?: AiMatch[];
   selectedSchoolId?: string;
   showNotif?: (opts: { type: "success"|"error"|"warning"|"info"; title: string; message: string }) => void;
+  isAdmin?: boolean;
 }
 
 // Convert percentage coordinates or fallback to real Gumaca Lat/Lng
@@ -115,6 +117,7 @@ export default function NeighborhoodMap({
   aiMatches,
   selectedSchoolId,
   showNotif,
+  isAdmin = false,
 }: NeighborhoodMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -848,6 +851,16 @@ export default function NeighborhoodMap({
         polygons={barangayPolygons}
         highlightId={highlightedBarangayId}
       />
+
+      {/* Admin-only: Barangay Boundary Drawing Tool */}
+      {isAdmin && (
+        <BarangayDrawingTool
+          map={leafletMapRef.current}
+          barangayPolygons={barangayPolygons}
+          setBarangayPolygons={setBarangayPolygons}
+          mapReady={mapReady}
+        />
+      )}
 
       {/* Quick Jump Buttons (Fullscreen) */}
       {isFullscreen && (
