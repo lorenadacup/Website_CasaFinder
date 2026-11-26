@@ -4137,7 +4137,7 @@ export default function App() {
           <PropertyModal
             property={detailModalProperty}
             onClose={() => setDetailModalProperty(null)}
-            onDelete={userSession?.role === "landlord" ? handleDeleteProperty : undefined}
+            onDelete={userSession?.role === "landlord" && detailModalProperty?.landlordUsername === userSession?.username ? handleDeleteProperty : undefined}
             onViewLandlordProfile={(prop) => setLandlordProfileProperty(prop)}
             onViewOnMap={(prop, schoolId) => {
               setDetailModalProperty(null);
