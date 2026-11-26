@@ -447,6 +447,10 @@ export default function App() {
     return () => { unsub(); };
   }, []);
 
+  // Bug 4 fix: keep a ref in sync with propertiesList to avoid stale closure in approval handlers
+  const propertiesRef = React.useRef(propertiesList);
+  useEffect(() => { propertiesRef.current = propertiesList; }, [propertiesList]);
+
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailModalProperty, setDetailModalProperty] = useState<Property | null>(null);
   const [showMapPage, setShowMapPage] = useState(false);
@@ -763,6 +767,15 @@ export default function App() {
           );
           return;
         }
+        // Bug 5 fix: check accountStatus for admin accounts
+        if (user.accountStatus && user.accountStatus !== "approved") {
+          setLoginError(
+            prefLanguage === "tagalog"
+              ? "Ang account na ito ay hindi aktibo."
+              : "This admin account is not currently active."
+          );
+          return;
+        }
       }
 
       if (user.password && user.password !== loginPassword) {
@@ -941,6 +954,11 @@ export default function App() {
   const handleResetForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotFoundUser) return;
+    // Bug 2 fix: require OTP to be verified before allowing password reset
+    if (!forgotOtpVerified) {
+      setLoginError("Please verify your OTP first.");
+      return;
+    }
 
     if (!forgotNewPassword.trim()) {
       setLoginError("Please enter your new password.");
@@ -1119,6 +1137,17 @@ export default function App() {
 
     // Validation for Security & Password tab
     if (profileTab === "settings" && profileEditPassword.trim()) {
+      // Bug 1 fix: verify current password before allowing change
+      const currentUser = registeredUsers.find(u => u.username === userSession.username);
+      if (profileCurrentPassword.trim() && profileCurrentPassword !== currentUser?.password) {
+        setSecurityErrorMsg(
+          prefLanguage === "tagalog"
+            ? "Mali ang iyong kasalukuyang password!"
+            : "Current password is incorrect!"
+        );
+        setIsSavingProfile(false);
+        return;
+      }
       if (profileConfirmPassword && profileEditPassword !== profileConfirmPassword) {
         setSecurityErrorMsg(
           prefLanguage === "tagalog"
@@ -1217,10 +1246,10 @@ export default function App() {
         );
       }
 
-      // Sync landlord properties with new profile details
+      // Bug 3 fix: Sync landlord properties with new profile details AND save to Supabase
       if (userSession.role === "landlord") {
-        setPropertiesList((prev) =>
-          prev.map((p) => {
+        setPropertiesList((prev) => {
+          const updated = prev.map((p) => {
             if (
               (p.landlordUsername && p.landlordUsername.toLowerCase() === userSession.username.toLowerCase()) ||
               (p.landlordName && p.landlordName.toLowerCase() === userSession.name.toLowerCase())
@@ -1240,8 +1269,13 @@ export default function App() {
               };
             }
             return p;
-          })
-        );
+          });
+          // Sync updated landlord properties to Supabase
+          updated
+            .filter(p => p.landlordUsername?.toLowerCase() === userSession.username.toLowerCase())
+            .forEach(p => upsertProperty(p).catch(console.error));
+          return updated;
+        });
       }
 
       setProfileSuccessMsg(
@@ -1483,7 +1517,7 @@ export default function App() {
     ));
     // Sync to Supabase
     updateUser(username, { accountStatus: "approved" }).catch(console.error);
-    propertiesList.filter(p => p.landlordUsername === username).forEach(p =>
+    propertiesRef.current.filter(p => p.landlordUsername === username).forEach(p =>
       updatePropertyApproval(p.id, "approved").catch(console.error)
     );
     logActivity(`Approved landlord account`, user?.name || username, "approve");
@@ -1499,7 +1533,7 @@ export default function App() {
     ));
     // Sync to Supabase
     updateUser(username, { accountStatus: "rejected", rejectionReason: reason || "" }).catch(console.error);
-    propertiesList.filter(p => p.landlordUsername === username).forEach(p =>
+    propertiesRef.current.filter(p => p.landlordUsername === username).forEach(p =>
       updatePropertyApproval(p.id, "rejected", reason).catch(console.error)
     );
     logActivity(`Rejected landlord account`, user?.name || username, "reject");
