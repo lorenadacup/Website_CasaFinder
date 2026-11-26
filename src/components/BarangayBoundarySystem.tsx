@@ -1,9 +1,13 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
+import { getAllBarangayBoundaries, upsertBarangayBoundary, deleteBarangayBoundary } from "../utils/db";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const BARANGAY_POLYGON_KEY = "casafinder_barangay_polygons_v1";
+
+// Re-export Supabase functions for use in other components
+export { getAllBarangayBoundaries, upsertBarangayBoundary, deleteBarangayBoundary };
 
 const BARANGAY_COLORS: Record<string, string> = {
   "tabing-dagat":     "#06b6d4",
@@ -38,6 +42,39 @@ export function loadBarangayPolygons(): BarangayPolygonsMap {
     if (raw) return JSON.parse(raw) as BarangayPolygonsMap;
   } catch (_) {}
   return {};
+}
+
+/** Load boundaries from Supabase and cache to localStorage */
+export async function loadBarangayPolygonsFromDB(): Promise<BarangayPolygonsMap> {
+  try {
+    const data = await getAllBarangayBoundaries();
+    const result: BarangayPolygonsMap = {};
+    for (const [id, b] of Object.entries(data)) {
+      result[id] = { name: b.name, color: b.color || '#94a3b8', vertices: b.vertices };
+    }
+    // Cache locally
+    localStorage.setItem(BARANGAY_POLYGON_KEY, JSON.stringify(result));
+    return result;
+  } catch (_) {
+    return loadBarangayPolygons();
+  }
+}
+
+/** Save a single boundary to Supabase and localStorage */
+export async function saveBarangayPolygon(id: string, polygon: BarangayPolygon): Promise<void> {
+  await upsertBarangayBoundary({ id, name: polygon.name, color: polygon.color, vertices: polygon.vertices });
+  // Update local cache
+  const existing = loadBarangayPolygons();
+  existing[id] = polygon;
+  localStorage.setItem(BARANGAY_POLYGON_KEY, JSON.stringify(existing));
+}
+
+/** Delete a boundary from Supabase and localStorage */
+export async function removeBarangayPolygon(id: string): Promise<void> {
+  await deleteBarangayBoundary(id);
+  const existing = loadBarangayPolygons();
+  delete existing[id];
+  localStorage.setItem(BARANGAY_POLYGON_KEY, JSON.stringify(existing));
 }
 
 export function normalizeBarangayId(name: string): string {

@@ -399,3 +399,50 @@ export function subscribeToUsers(callback: (updater: (prev: any[]) => any[]) => 
 
   return () => { supabase.removeChannel(channel); };
 }
+
+// ─── BARANGAY BOUNDARIES ──────────────────────────────────────────────────────
+
+export interface DbBarangayBoundary {
+  id: string;
+  name: string;
+  color?: string;
+  vertices: [number, number][];
+}
+
+export async function getAllBarangayBoundaries(): Promise<Record<string, DbBarangayBoundary>> {
+  const { data, error } = await supabase
+    .from('barangay_boundaries')
+    .select('*');
+  if (error) throw error;
+  const result: Record<string, DbBarangayBoundary> = {};
+  for (const row of (data || [])) {
+    result[row.id] = {
+      id: row.id,
+      name: row.name,
+      color: row.color,
+      vertices: row.vertices || [],
+    };
+  }
+  return result;
+}
+
+export async function upsertBarangayBoundary(boundary: DbBarangayBoundary) {
+  const { error } = await supabase
+    .from('barangay_boundaries')
+    .upsert({
+      id: boundary.id,
+      name: boundary.name,
+      color: boundary.color || '#94a3b8',
+      vertices: boundary.vertices,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  if (error) throw error;
+}
+
+export async function deleteBarangayBoundary(id: string) {
+  const { error } = await supabase
+    .from('barangay_boundaries')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}

@@ -17,6 +17,7 @@ import SearchResults from "./SearchResults";
 import ArrowMarkersSystem from "./ArrowMarkersSystem";
 import BarangayBoundarySystem, {
   loadBarangayPolygons,
+  loadBarangayPolygonsFromDB,
   normalizeBarangayId,
   type BarangayPolygonsMap,
 } from "./BarangayBoundarySystem";
@@ -156,8 +157,12 @@ export default function NeighborhoodMap({
   const [activeSchoolRouteFilter, setActiveSchoolRouteFilter] = useState<string>("all");
   const [dismissedSchoolId, setDismissedSchoolId] = useState<string | null>(null);
 
-  // Barangay boundary state
-  const [barangayPolygons] = useState<BarangayPolygonsMap>(() => loadBarangayPolygons());
+  // Barangay boundary state — load from localStorage cache first, then sync from Supabase
+  const [barangayPolygons, setBarangayPolygons] = useState<BarangayPolygonsMap>(() => loadBarangayPolygons());
+
+  useEffect(() => {
+    loadBarangayPolygonsFromDB().then(setBarangayPolygons).catch(console.error);
+  }, []);
   const [highlightedBarangayId, setHighlightedBarangayId] = useState<string | null>(null);
   // System box state
   const [systemTab, setSystemTab] = useState<"edit" | "add">("edit");
