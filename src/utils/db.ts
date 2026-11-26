@@ -341,7 +341,7 @@ export async function updatePropertyReviews(id: string, reviews: any[]) {
 
 // ─── REAL-TIME SUBSCRIPTIONS ──────────────────────────────────────────────────
 
-export function subscribeToProperties(callback: (updater: any) => void) {
+export function subscribeToProperties(callback: (updater: (prev: Property[]) => Property[]) => void) {
   const channel = supabase
     .channel('properties-changes')
     .on(
@@ -350,14 +350,17 @@ export function subscribeToProperties(callback: (updater: any) => void) {
       (payload) => {
         callback((prev: Property[]) => {
           if (payload.eventType === 'INSERT') {
-            return [dbToAppProperty(payload.new), ...prev];
+            const newProp = dbToAppProperty(payload.new);
+            // avoid duplicates
+            if (prev.find(p => p.id === newProp.id)) return prev;
+            return [newProp, ...prev];
           }
           if (payload.eventType === 'UPDATE') {
             const updated = dbToAppProperty(payload.new);
             return prev.map((p) => p.id === updated.id ? updated : p);
           }
           if (payload.eventType === 'DELETE') {
-            return prev.filter((p) => p.id !== payload.old.id);
+            return prev.filter((p) => p.id !== (payload.old as any).id);
           }
           return prev;
         });
@@ -368,7 +371,7 @@ export function subscribeToProperties(callback: (updater: any) => void) {
   return () => { supabase.removeChannel(channel); };
 }
 
-export function subscribeToUsers(callback: (updater: any) => void) {
+export function subscribeToUsers(callback: (updater: (prev: any[]) => any[]) => void) {
   const channel = supabase
     .channel('users-changes')
     .on(
@@ -377,7 +380,9 @@ export function subscribeToUsers(callback: (updater: any) => void) {
       (payload) => {
         callback((prev: any[]) => {
           if (payload.eventType === 'INSERT') {
-            return [...prev, dbToAppUser(payload.new as DbUser)];
+            const newUser = dbToAppUser(payload.new as DbUser);
+            if (prev.find((u: any) => u.username === newUser.username)) return prev;
+            return [...prev, newUser];
           }
           if (payload.eventType === 'UPDATE') {
             const updated = dbToAppUser(payload.new as DbUser);

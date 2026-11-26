@@ -400,7 +400,7 @@ export default function App() {
         setRegisteredUsers(users as any);
       }
       // Restore session only if user still exists in Supabase
-      const savedSession = sessionStorage.getItem("casafinder_user_session");
+      const savedSession = localStorage.getItem("casafinder_user_session");
       if (savedSession) {
         try {
           const parsed = JSON.parse(savedSession);
@@ -418,7 +418,7 @@ export default function App() {
                 });
               } else {
                 // User was deleted — clear session
-                sessionStorage.removeItem("casafinder_user_session");
+                localStorage.removeItem("casafinder_user_session");
               }
             }
           }
@@ -516,9 +516,9 @@ export default function App() {
   // Persist user session
   useEffect(() => {
     if (userSession) {
-      sessionStorage.setItem("casafinder_user_session", JSON.stringify(userSession));
+      localStorage.setItem("casafinder_user_session", JSON.stringify(userSession));
     } else {
-      sessionStorage.removeItem("casafinder_user_session");
+      localStorage.removeItem("casafinder_user_session");
     }
   }, [userSession]);
 
@@ -781,7 +781,7 @@ export default function App() {
       setProfileCurrentPassword("");
       setProfileConfirmPassword("");
       setUserSession(session);
-      sessionStorage.setItem("casafinder_user_session", JSON.stringify(session));
+      localStorage.setItem("casafinder_user_session", JSON.stringify(session));
 
       const isDemo = ["juan.student", "nena.landlord", "gumaca.admin", "campus.admin"].includes(user.username);
 
@@ -864,7 +864,7 @@ export default function App() {
     }
     const onboardingSession = { ...userSession, name: newName, avatar: newAvatar };
     setUserSession(onboardingSession);
-    sessionStorage.setItem("casafinder_user_session", JSON.stringify(onboardingSession));
+    localStorage.setItem("casafinder_user_session", JSON.stringify(onboardingSession));
     setShowOnboardingModal(false);
   };
 
@@ -977,7 +977,7 @@ export default function App() {
       avatar: dedicatedAvatar
     };
     setUserSession(session);
-    sessionStorage.setItem("casafinder_user_session", JSON.stringify(session));
+    localStorage.setItem("casafinder_user_session", JSON.stringify(session));
     localStorage.setItem(`casafinder_onboarded_${demoUser.username}`, "true");
 
     // Close welcome onboarding wizard for quick demo logins
@@ -993,7 +993,7 @@ export default function App() {
     const dedicatedAvatar = localStorage.getItem(`casafinder_avatar_${demoUser.username}`) || demoUser.avatar;
     const session = { role, name: demoUser.name, username: demoUser.username, avatar: dedicatedAvatar };
     setUserSession(session);
-    sessionStorage.setItem("casafinder_user_session", JSON.stringify(session));
+    localStorage.setItem("casafinder_user_session", JSON.stringify(session));
     localStorage.removeItem(`casafinder_onboarded_${demoUser.username}`);
     // Reset all onboarding fields
     setOnboardingSlide(0);
@@ -1190,7 +1190,7 @@ export default function App() {
         avatar: newAvatar
       };
       setUserSession(updatedSession);
-      sessionStorage.setItem("casafinder_user_session", JSON.stringify(updatedSession));
+      localStorage.setItem("casafinder_user_session", JSON.stringify(updatedSession));
       // Also persist avatar to a dedicated key so it survives any session reload
       if (newAvatar) {
         localStorage.setItem(`casafinder_avatar_${userSession.username}`, newAvatar);
@@ -1514,12 +1514,12 @@ export default function App() {
         // Delete from Supabase
         deleteUser(username).catch(console.error);
         // Clear their localStorage session if they were logged in
-        const savedSession = sessionStorage.getItem("casafinder_user_session");
+        const savedSession = localStorage.getItem("casafinder_user_session");
         if (savedSession) {
           try {
             const parsed = JSON.parse(savedSession);
             if (parsed?.username === username) {
-              sessionStorage.removeItem("casafinder_user_session");
+              localStorage.removeItem("casafinder_user_session");
             }
           } catch {}
         }
@@ -5797,7 +5797,7 @@ export default function App() {
                               // Delete from Supabase
                               deleteUser(username).catch(console.error);
                               setUserSession(null);
-                              sessionStorage.removeItem("casafinder_user_session");
+                              localStorage.removeItem("casafinder_user_session");
                               localStorage.removeItem("casafinder_active_sessions");
                             },
                           });
@@ -5959,4 +5959,5 @@ export default function App() {
     </>
   );
 }
+
 
