@@ -172,7 +172,17 @@ export default function App() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot" | "adminLogin">("login");
 
-  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(DEFAULT_DEMO_USERS);
+  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; username: string; role: "student" | "landlord" | "admin"; password?: string; email?: string; mobile?: string; school?: string; bio?: string; address?: string; emergencyContact?: string; avatar?: string; facebook?: string; facebookLink?: string; permitNo?: string; permitFile?: string; permitStatus?: string; accountStatus?: "pending" | "approved" | "rejected"; rejectionReason?: string; age?: string; gender?: string; occupation?: string; prefLocation?: string; prefType?: string; budgetMin?: string; budgetMax?: string; occupants?: string; moveIn?: string; stayDuration?: string; pets?: string; smoking?: string; businessName?: string; yearsOperation?: string; }[]>(() => {
+    // Load from localStorage cache immediately
+    try {
+      const cached = localStorage.getItem("casafinder_users_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_DEMO_USERS;
+  });
 
   const [userSession, setUserSession] = useState<{ role: "student" | "landlord" | "admin" | "guest"; name: string; username: string; avatar?: string } | null>(() => {
     // Restore session immediately from localStorage — will be validated against Supabase after load
@@ -408,13 +418,32 @@ export default function App() {
   // Translation helper based on preferred language
   const t = (key: Parameters<typeof getTranslation>[1]) => getTranslation(prefLanguage, key);
 
-  // Application State - loaded from Supabase
-  const [propertiesList, setPropertiesList] = useState<Property[]>([]);
+  // Application State - loaded from cache first, then Supabase
+  const [propertiesList, setPropertiesList] = useState<Property[]>(() => {
+    // Load from localStorage cache immediately for instant display
+    try {
+      const cached = localStorage.getItem("casafinder_properties_cache");
+      if (cached) return JSON.parse(cached) as Property[];
+    } catch {}
+    return [];
+  });
   const [usersLoaded, setUsersLoaded] = useState(false);
 
   useEffect(() => {
-    getAllProperties().then(setPropertiesList).catch(console.error);
-    const unsub = subscribeToProperties((updater) => setPropertiesList(updater));
+    // Fetch fresh from Supabase in background
+    getAllProperties().then(fresh => {
+      setPropertiesList(fresh);
+      // Update cache
+      try { localStorage.setItem("casafinder_properties_cache", JSON.stringify(fresh)); } catch {}
+    }).catch(console.error);
+    const unsub = subscribeToProperties((updater) => {
+      setPropertiesList(updater);
+      // Keep cache in sync on realtime updates
+      setPropertiesList(latest => {
+        try { localStorage.setItem("casafinder_properties_cache", JSON.stringify(latest)); } catch {}
+        return latest;
+      });
+    });
     return () => { unsub(); };
   }, []);
 
@@ -425,8 +454,11 @@ export default function App() {
           await upsertUser(u).catch(console.error);
         }
         setRegisteredUsers(DEFAULT_DEMO_USERS);
+        try { localStorage.setItem("casafinder_users_cache", JSON.stringify(DEFAULT_DEMO_USERS)); } catch {}
       } else {
         setRegisteredUsers(users as any);
+        try { localStorage.setItem("casafinder_users_cache", JSON.stringify(users)); } catch {}
+      }
       }
       // Restore session only if user still exists in Supabase
       const savedSession = localStorage.getItem("casafinder_user_session");
