@@ -708,7 +708,23 @@ export default function PropertyModal({
                 )}
 
                 <div className="relative rounded-2xl overflow-hidden aspect-video bg-stone-100 dark:bg-stone-800 border border-stone-100 dark:border-stone-800">
-                  <img src={property.image} alt={property.title} className="w-full h-full object-cover" />
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = "none";
+                      const parent = target.parentElement;
+                      if (parent && !parent.querySelector(".img-fallback")) {
+                        const fallback = document.createElement("div");
+                        fallback.className = "img-fallback w-full h-full flex items-center justify-center text-stone-400 text-xs font-medium";
+                        fallback.innerHTML = `<div class="text-center space-y-2"><div class="text-4xl">🏠</div><p>${property.title}</p></div>`;
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
                 </div>
 
                 {/* Quick Action Buttons */}
