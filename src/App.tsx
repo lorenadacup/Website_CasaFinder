@@ -1961,19 +1961,19 @@ export default function App() {
         </div>
 
         {/* RIGHT FORM PANEL */}
-        <div className="flex-1 flex justify-center p-4 sm:p-8 py-8 bg-[#ffffff] border-l border-slate-100 overflow-y-auto lg:h-full min-h-screen">
+        <div className="flex-1 flex justify-center p-4 sm:p-8 py-6 sm:py-8 bg-[#ffffff] border-l border-slate-100 overflow-y-auto lg:h-full min-h-screen">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="w-full max-w-sm sm:max-w-md pb-8"
+            className="w-full max-w-sm sm:max-w-md pb-6"
           >
             {/* Mobile logo */}
-            <div className="flex lg:hidden flex-col items-center justify-center gap-2 mb-4">
-              <div className="h-16 w-16 rounded-full overflow-hidden ring-2 ring-pink-500/10 shadow-md">
+            <div className="flex lg:hidden flex-col items-center justify-center gap-1.5 mb-3">
+              <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-pink-500/10 shadow-md">
                 <img src="/casafinder-logo.png" alt="CasaFinder" className="w-full h-full object-contain bg-[#ffffff] p-1" />
               </div>
-              <span className="font-black text-slate-800 text-xl tracking-tight">CasaFinder</span>
+              <span className="font-black text-slate-800 text-lg tracking-tight">CasaFinder</span>
             </div>
 
             {/* ADMIN LOGIN */}
@@ -2124,7 +2124,7 @@ export default function App() {
               </div>
 
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div>
                   <h2 className="text-xl sm:text-3xl font-extrabold text-stone-800">
                     {authMode === "signup" ? "Create account" : "Sign in"}
@@ -2229,9 +2229,9 @@ export default function App() {
                     {prefLanguage === "tagalog" ? "Exclusive Admin Portal 🔒" : "Exclusive System Admin Portal 🔒"}
                   </button>
                 )}
-                <div className="space-y-2.5 pt-1 border-t border-stone-100">
+                <div className="space-y-2 pt-1 border-t border-stone-100">
                   <p className="text-[11px] font-bold uppercase tracking-widest text-stone-400 text-center">{t("quickAccessDemo")}</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button type="button" onClick={() => handleQuickLogin("student")}
                       className="py-2.5 bg-pink-50 hover:bg-pink-100/80 border border-pink-100 rounded-xl text-center transition-all cursor-pointer active:scale-95">
                       <div className="text-xs font-bold text-pink-600">Demo Tenant</div>
