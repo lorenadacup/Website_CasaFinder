@@ -467,6 +467,17 @@ export default function App() {
   const propertiesRef = React.useRef(propertiesList);
   useEffect(() => { propertiesRef.current = propertiesList; }, [propertiesList]);
 
+  // Real-time sign-out: if current user's account was deleted from another device
+  useEffect(() => {
+    if (!userSession || userSession.role === "guest" || !usersLoaded) return;
+    const stillExists = registeredUsers.find((u: any) => u.username === userSession.username);
+    if (!stillExists) {
+      localStorage.removeItem("casafinder_user_session");
+      setUserSession(null);
+      setShowProfileModal(false);
+    }
+  }, [registeredUsers, usersLoaded]);
+
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailModalProperty, setDetailModalProperty] = useState<Property | null>(null);
   const [showMapPage, setShowMapPage] = useState(false);
@@ -605,7 +616,7 @@ export default function App() {
   };
 
   // Handle Login and Signup submission
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Block login/signup until Supabase users are loaded
@@ -756,7 +767,12 @@ export default function App() {
         return;
       }
 
-      const user = registeredUsers.find(u => {
+      // Fix 2: always fetch fresh users from Supabase on login to prevent deleted accounts from logging in
+      const freshUsers = await getAllUsers().catch(() => null);
+      if (freshUsers) setRegisteredUsers(freshUsers as any);
+      const userSource = freshUsers || registeredUsers;
+
+      const user = userSource.find((u: any) => {
         const uName = u.username.trim().toLowerCase();
         const uEmail = (u.email || "").trim().toLowerCase();
         const uMobile = (u.mobile || "").trim().replace(/\s+/g, "");
