@@ -13,7 +13,7 @@ import AboutModal from "./components/AboutModal";
 import {
   getAllUsers, createUser, updateUser, upsertUser, deleteUser,
   getAllProperties, upsertProperty, deleteProperty,
-  updatePropertyApproval, updatePropertyReviews,
+  updatePropertyApproval, updatePropertyReviews, updateAvailableSlots,
   subscribeToProperties, subscribeToUsers,
 } from "./utils/db";
 import NeighborhoodMap from "./components/NeighborhoodMap";
@@ -1517,6 +1517,16 @@ export default function App() {
     if (selectedProperty?.id === id) setSelectedProperty(null);
     if (detailModalProperty?.id === id) setDetailModalProperty(null);
     if (landlordProfileProperty?.id === id) setLandlordProfileProperty(null);
+  };
+
+  // Update available slots for a property (landlord only)
+  const handleUpdateSlots = (id: string, slots: number | null) => {
+    setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, availableSlots: slots } : p));
+    updateAvailableSlots(id, slots).catch(console.error);
+    // Also update detailModalProperty if open
+    if (detailModalProperty?.id === id) {
+      setDetailModalProperty(prev => prev ? { ...prev, availableSlots: slots } : prev);
+    }
   };
 
   const handleApproveProperty = (id: string) => {
@@ -3310,8 +3320,8 @@ export default function App() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5 lg:gap-6">
               {processedProperties.map((property) => (
+                <div key={property.id} className="flex flex-col gap-1.5">
                 <PropertyCard
-                  key={property.id}
                   property={property}
                   onSelect={() => {
                     setSelectedProperty(property);
@@ -3336,6 +3346,45 @@ export default function App() {
                   currentUserRole={userSession?.role as any}
                   language={prefLanguage}
                 />
+                {/* Slots quick-update — landlord only, own listings only */}
+                {userSession.role === "landlord" && property.landlordUsername === userSession.username && (
+                  <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-stone-400">
+                        {prefLanguage === "tagalog" ? "Bakanteng Slots" : "Available Slots"}
+                      </span>
+                      <span className={`text-xs font-bold ${
+                        property.availableSlots === 0
+                          ? "text-red-500"
+                          : property.availableSlots != null
+                          ? "text-emerald-600"
+                          : "text-stone-400"
+                      }`}>
+                        {property.availableSlots === 0
+                          ? (prefLanguage === "tagalog" ? "Puno na" : "Full")
+                          : property.availableSlots != null
+                          ? `${property.availableSlots} ${prefLanguage === "tagalog" ? "bakante" : "open"}`
+                          : (prefLanguage === "tagalog" ? "Hindi naka-set" : "Not set")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateSlots(property.id, Math.max(0, (property.availableSlots ?? property.beds) - 1))}
+                        className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-red-100 dark:hover:bg-red-900/40 text-stone-700 dark:text-stone-300 hover:text-red-600 font-bold text-sm flex items-center justify-center transition-all cursor-pointer"
+                      >−</button>
+                      <span className="text-xs font-mono font-bold text-stone-800 dark:text-stone-100 w-5 text-center">
+                        {property.availableSlots ?? "—"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateSlots(property.id, (property.availableSlots ?? 0) + 1)}
+                        className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-stone-700 dark:text-stone-300 hover:text-emerald-600 font-bold text-sm flex items-center justify-center transition-all cursor-pointer"
+                      >+</button>
+                    </div>
+                  </div>
+                )}
+                </div>
               ))}
             </div>
           </div>

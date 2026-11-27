@@ -255,6 +255,7 @@ export function dbToAppProperty(row: any): Property {
     landlordPermits: row.landlord_permits || {},
     approvalStatus: row.approval_status || 'pending',
     rejectionReason: row.rejection_reason || '',
+    availableSlots: row.available_slots ?? null,
   };
 }
 
@@ -290,6 +291,7 @@ export function appPropertyToDb(p: Property) {
     landlord_permits: p.landlordPermits || {},
     approval_status: p.approvalStatus || 'pending',
     rejection_reason: p.rejectionReason || '',
+    available_slots: p.availableSlots ?? null,
   };
 }
 
@@ -335,6 +337,14 @@ export async function updatePropertyReviews(id: string, reviews: any[]) {
   const { error } = await supabase
     .from('properties')
     .update({ reviews })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateAvailableSlots(id: string, slots: number | null) {
+  const { error } = await supabase
+    .from('properties')
+    .update({ available_slots: slots })
     .eq('id', id);
   if (error) throw error;
 }

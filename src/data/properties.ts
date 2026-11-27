@@ -56,6 +56,7 @@ export interface Property {
   landlordPermits?: LandlordPermits;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
+  availableSlots?: number | null;
 }
 
 export const properties: Property[] = [

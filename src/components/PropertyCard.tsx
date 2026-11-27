@@ -78,6 +78,19 @@ export default function PropertyCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent" />
 
+        {/* Availability Badge */}
+        {property.availableSlots != null && (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+            <span className={`rounded-full font-black px-2.5 py-1 text-[9px] sm:text-[10px] shadow-lg border ${
+              property.availableSlots === 0
+                ? "bg-red-600/90 text-white border-red-400"
+                : "bg-emerald-500/90 text-white border-emerald-400"
+            }`}>
+              {property.availableSlots === 0 ? "🔴 Full" : `🟢 ${property.availableSlots} open`}
+            </span>
+          </div>
+        )}
+
         {/* Property Type, Gender Policy, and Approval Status Badges */}
         <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex flex-wrap gap-2 items-center max-w-[85%]">
           {property.approvalStatus === "pending" && (
