@@ -1467,6 +1467,7 @@ export default function App() {
       landlordBio: landlordBio,
       landlordFacebook: (currentLandlordObj as any)?.facebook || "",
       approvalStatus: userSession?.role === "admin" ? "approved" : "pending",
+      availableSlots: newBeds,
       landlordPermits: landlordPermitNo ? {
         businessPermit: landlordPermitNo.startsWith("BP-") ? landlordPermitNo : `BP-GMC-${landlordPermitNo}`
       } : undefined
