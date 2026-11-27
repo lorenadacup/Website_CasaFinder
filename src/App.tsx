@@ -1923,6 +1923,17 @@ export default function App() {
     );
   }
 
+  // Show T&C after loading, before sign-in page
+  if (showTerms) {
+    return (
+      <TermsModal
+        isOpen={true}
+        onAccept={handleAcceptTerms}
+        onDecline={handleDeclineTerms}
+      />
+    );
+  }
+
   if (!userSession) {
     return (
       <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans flex antialiased lg:h-screen lg:overflow-hidden">
@@ -6025,13 +6036,6 @@ export default function App() {
 
     {/* Global notification modal */}
     <AppNotification notif={activeNotif} onClose={() => setActiveNotif(null)} />
-
-    {/* Terms & Conditions Modal — shown once on first visit */}
-    <TermsModal
-      isOpen={showTerms}
-      onAccept={handleAcceptTerms}
-      onDecline={handleDeclineTerms}
-    />
 
     {/* Nav Info Modals */}
     <NavInfoModal
