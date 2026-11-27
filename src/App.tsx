@@ -6022,6 +6022,7 @@ export default function App() {
       section={navInfoSection}
       onClose={() => setNavInfoSection(null)}
       prefLanguage={prefLanguage}
+      userRole={userSession?.role as any}
     />
     </>
   );

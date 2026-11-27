@@ -12,6 +12,7 @@ interface NavInfoModalProps {
   section: NavInfoSection;
   onClose: () => void;
   prefLanguage?: string;
+  userRole?: "student" | "landlord" | "admin" | "guest";
 }
 
 // ─── Content ──────────────────────────────────────────────────────────────────
@@ -29,48 +30,69 @@ const FEATURES = [
   { icon: <Lock className="h-5 w-5" />,              color: "text-rose-400    bg-rose-400/10    border-rose-400/20",    title: "Secure Accounts",           desc: "Password protection, 2-Factor Authentication toggle, active session tracking, and account PIN." },
 ];
 
-const HOW_IT_WORKS = [
+const HOW_IT_WORKS_TENANT = [
   {
-    step: "01",
-    icon: <UserCircle className="h-6 w-6" />,
-    color: "from-pink-500 to-rose-600",
-    title: "Create an Account",
-    desc: "Sign up as a Student or Landlord. Fill in your profile details during onboarding — takes less than 2 minutes.",
+    step: "01", icon: <UserCircle className="h-6 w-6" />, color: "from-pink-500 to-rose-600",
+    title: "Gumawa ng Account",
+    desc: "Mag-sign up bilang Student/Tenant. Punan ang iyong profile sa onboarding — tatagal lang ng 2 minuto.",
   },
   {
-    step: "02",
-    icon: <Search className="h-6 w-6" />,
-    color: "from-violet-500 to-indigo-600",
-    title: "Search for Housing",
-    desc: "Browse listings filtered by barangay, price, type, and gender policy. Use AI Matching to get personalized scores.",
+    step: "02", icon: <Search className="h-6 w-6" />, color: "from-violet-500 to-indigo-600",
+    title: "Maghanap ng Boarding House",
+    desc: "I-browse ang mga listing na naka-filter sa barangay, presyo, uri, at gender policy. Gamitin ang AI Matching para makuha ang personalized na score.",
   },
   {
-    step: "03",
-    icon: <MapPin className="h-6 w-6" />,
-    color: "from-emerald-500 to-teal-600",
-    title: "View on Map",
-    desc: "Open the Interactive Map to see the exact location of any property, its distance to your campus, and surrounding landmarks.",
+    step: "03", icon: <MapPin className="h-6 w-6" />, color: "from-emerald-500 to-teal-600",
+    title: "Tingnan sa Mapa",
+    desc: "Buksan ang Interactive Map para makita ang eksaktong lokasyon ng property, distansya sa iyong eskwelahan, at mga landmark sa paligid.",
   },
   {
-    step: "04",
-    icon: <ClipboardList className="h-6 w-6" />,
-    color: "from-amber-500 to-orange-600",
-    title: "Check Details & Reviews",
-    desc: "Open a listing to see full amenities, landlord profile, permit badges, student reviews, and contact options.",
+    step: "04", icon: <ClipboardList className="h-6 w-6" />, color: "from-amber-500 to-orange-600",
+    title: "Suriin ang Detalye at Reviews",
+    desc: "Buksan ang listing para makita ang buong amenities, profile ng landlord, permit badges, reviews ng mga estudyante, at paraan ng pakikipag-ugnayan.",
   },
   {
-    step: "05",
-    icon: <Laptop className="h-6 w-6" />,
-    color: "from-sky-500 to-blue-600",
-    title: "Contact the Landlord",
-    desc: "Send a pre-made SMS message or open Facebook Messenger directly from the listing — no manual typing needed.",
+    step: "05", icon: <Laptop className="h-6 w-6" />, color: "from-sky-500 to-blue-600",
+    title: "Makipag-ugnayan sa Landlord",
+    desc: "Mag-send ng pre-made SMS o buksan ang Facebook Messenger direkta mula sa listing — walang manual na pag-type.",
   },
   {
-    step: "06",
-    icon: <CheckCircle className="h-6 w-6" />,
-    color: "from-lime-500 to-green-600",
-    title: "Move In & Leave a Review",
-    desc: "Once you've stayed, rate the property 1–5 stars and leave a comment to help future students make better choices.",
+    step: "06", icon: <CheckCircle className="h-6 w-6" />, color: "from-lime-500 to-green-600",
+    title: "Lumipat at Mag-iwan ng Review",
+    desc: "Pagkatapos manirahan, i-rate ang property 1–5 stars at mag-iwan ng komento para matulungan ang mga susunod na estudyante.",
+  },
+];
+
+const HOW_IT_WORKS_LANDLORD = [
+  {
+    step: "01", icon: <UserCircle className="h-6 w-6" />, color: "from-blue-500 to-indigo-600",
+    title: "Mag-sign Up bilang Landlord",
+    desc: "Gumawa ng account bilang Landlord. I-fill in ang iyong business name, address, at contact info sa onboarding.",
+  },
+  {
+    step: "02", icon: <Shield className="h-6 w-6" />, color: "from-amber-500 to-orange-600",
+    title: "Hintayin ang Approval ng Admin",
+    desc: "Ang iyong landlord account ay ire-review ng LGU Housing Admin. Makakatanggap ka ng notification kapag na-approve na.",
+  },
+  {
+    step: "03", icon: <Building2 className="h-6 w-6" />, color: "from-emerald-500 to-teal-600",
+    title: "Mag-post ng Listing",
+    desc: "I-click ang 'Post Housing' button. Punan ang lahat ng detalye — pangalan, presyo, amenities, litrato, at i-pin ang eksaktong lokasyon sa mapa.",
+  },
+  {
+    step: "04", icon: <ClipboardList className="h-6 w-6" />, color: "from-violet-500 to-purple-600",
+    title: "Hintayin ang Approval ng Listing",
+    desc: "Ang bawat listing ay ire-review ng admin bago ipakita sa publiko. Makakatanggap ka ng notification kapag na-approve o na-reject.",
+  },
+  {
+    step: "05", icon: <Star className="h-6 w-6" />, color: "from-pink-500 to-rose-600",
+    title: "Pamahalaan ang iyong mga Listing",
+    desc: "Maaari mong i-edit o i-delete ang iyong mga listing anumang oras. I-update ang presyo, photos, at amenities kung kinakailangan.",
+  },
+  {
+    step: "06", icon: <CheckCircle className="h-6 w-6" />, color: "from-lime-500 to-green-600",
+    title: "Makipag-ugnayan sa mga Tenant",
+    desc: "Makatatanggap ka ng mga mensahe mula sa mga interesadong tenant sa pamamagitan ng SMS o Facebook Messenger.",
   },
 ];
 
@@ -118,8 +140,11 @@ const WHO_ITS_FOR = [
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-export default function NavInfoModal({ section, onClose, prefLanguage = "english" }: NavInfoModalProps) {
+export default function NavInfoModal({ section, onClose, prefLanguage = "english", userRole }: NavInfoModalProps) {
   const isTagalog = prefLanguage === "tagalog";
+
+  // Choose How It Works content based on role
+  const HOW_IT_WORKS = userRole === "landlord" ? HOW_IT_WORKS_LANDLORD : HOW_IT_WORKS_TENANT;
 
   const title = {
     "features":     isTagalog ? "Mga Features ng CasaFinder" : "CasaFinder Features",
