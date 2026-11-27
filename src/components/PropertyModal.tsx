@@ -18,6 +18,7 @@ interface PropertyModalProps {
   userSession?: { role: "student" | "landlord" | "admin" | "guest"; name: string; username: string } | null;
   onAddReview?: (propertyId: string, rating: number, comment: string) => void;
   onAddReply?: (propertyId: string, reviewId: string, comment: string) => void;
+  onUpdateSlots?: (id: string, slots: number | null) => void;
   language?: Language;
 }
 
@@ -33,6 +34,7 @@ export default function PropertyModal({
   onAddReview,
   onAddReply,
   onViewTenantProfile,
+  onUpdateSlots,
   language = "tagalog"
 }: PropertyModalProps) {
   const isTagalog = language === "tagalog";
@@ -1056,6 +1058,50 @@ export default function PropertyModal({
                     <p className="text-xl font-black text-stone-800 dark:text-stone-100">{property.baths}</p>
                     <p className="text-[10px] font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wide mt-0.5">{isTagalog ? "Banyo" : "Baths"}</p>
                   </div>
+                </div>
+
+                {/* Available Slots — shown to all, editable by owner landlord */}
+                <div className={`rounded-xl p-3 border flex items-center justify-between gap-2 ${
+                  property.availableSlots === 0
+                    ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+                    : property.availableSlots != null
+                    ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
+                    : "bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700"
+                }`}>
+                  <div>
+                    <p className={`text-lg font-black ${
+                      property.availableSlots === 0 ? "text-red-600 dark:text-red-400"
+                      : property.availableSlots != null ? "text-emerald-700 dark:text-emerald-400"
+                      : "text-stone-500 dark:text-stone-400"
+                    }`}>
+                      {property.availableSlots === 0
+                        ? (isTagalog ? "Puno na" : "Fully Occupied")
+                        : property.availableSlots != null
+                        ? `${property.availableSlots} ${isTagalog ? "Bakante" : "Available"}`
+                        : "—"}
+                    </p>
+                    <p className="text-[10px] font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wide mt-0.5">
+                      {isTagalog ? "Bakanteng Slot" : "Available Slots"}
+                    </p>
+                  </div>
+                  {/* +/- controls — only for the listing owner */}
+                  {onUpdateSlots && userSession?.role === "landlord" && userSession.username === property.landlordUsername && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onUpdateSlots(property.id, Math.max(0, (property.availableSlots ?? property.beds) - 1)); }}
+                        className="w-8 h-8 rounded-xl bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 hover:bg-red-50 hover:border-red-300 text-stone-700 dark:text-stone-200 font-bold text-lg flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                      >−</button>
+                      <span className="text-base font-black text-stone-800 dark:text-stone-100 w-6 text-center">
+                        {property.availableSlots ?? "—"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onUpdateSlots(property.id, (property.availableSlots ?? 0) + 1); }}
+                        className="w-8 h-8 rounded-xl bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 hover:bg-emerald-50 hover:border-emerald-300 text-stone-700 dark:text-stone-200 font-bold text-lg flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                      >+</button>
+                    </div>
+                  )}
                 </div>
               </div>
 
