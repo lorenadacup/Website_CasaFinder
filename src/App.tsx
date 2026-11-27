@@ -4,6 +4,7 @@ import { Property } from "./data/properties";
 import { studentDemoProperties } from "./data/studentDemos";
 import PropertyCard from "./components/PropertyCard";
 import PropertySkeleton from "./components/PropertySkeleton";
+import TermsModal from "./components/TermsModal";
 import PropertyModal from "./components/PropertyModal";
 import TenantProfileModal from "./components/TenantProfileModal";
 import LandlordAdminProfileModal from "./components/LandlordAdminProfileModal";
@@ -150,6 +151,21 @@ export default function App() {
   const showNotif = (opts: NotifOptions) => setActiveNotif(opts);
 
   const [navInfoSection, setNavInfoSection] = useState<NavInfoSection>(null);
+
+  // Terms & Conditions — show once, remember acceptance in localStorage
+  const [showTerms, setShowTerms] = useState(() => {
+    return localStorage.getItem("casafinder_terms_accepted") !== "true";
+  });
+
+  const handleAcceptTerms = () => {
+    localStorage.setItem("casafinder_terms_accepted", "true");
+    setShowTerms(false);
+  };
+
+  const handleDeclineTerms = () => {
+    // Keep showing terms — user cannot proceed without accepting
+    setShowTerms(true);
+  };
 
   // Loading and Authentication States
   const [isLoading, setIsLoading] = useState(true);
@@ -5993,6 +6009,13 @@ export default function App() {
 
     {/* Global notification modal */}
     <AppNotification notif={activeNotif} onClose={() => setActiveNotif(null)} />
+
+    {/* Terms & Conditions Modal — shown once on first visit */}
+    <TermsModal
+      isOpen={showTerms}
+      onAccept={handleAcceptTerms}
+      onDecline={handleDeclineTerms}
+    />
 
     {/* Nav Info Modals */}
     <NavInfoModal
