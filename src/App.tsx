@@ -1923,8 +1923,8 @@ export default function App() {
     );
   }
 
-  // Show T&C after loading, before sign-in page
-  if (showTerms) {
+  // Show T&C after loading, before sign-in page — only if not already logged in
+  if (showTerms && !userSession) {
     return (
       <TermsModal
         isOpen={true}
