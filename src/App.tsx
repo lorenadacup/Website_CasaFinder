@@ -459,7 +459,6 @@ export default function App() {
         setRegisteredUsers(users as any);
         try { localStorage.setItem("casafinder_users_cache", JSON.stringify(users)); } catch {}
       }
-      }
       // Restore session only if user still exists in Supabase
       const savedSession = localStorage.getItem("casafinder_user_session");
       if (savedSession) {
