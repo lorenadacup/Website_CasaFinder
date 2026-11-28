@@ -367,7 +367,17 @@ export function subscribeToProperties(callback: (updater: (prev: Property[]) => 
           }
           if (payload.eventType === 'UPDATE') {
             const updated = dbToAppProperty(payload.new);
-            return prev.map((p) => p.id === updated.id ? updated : p);
+            return prev.map((p) => {
+              if (p.id !== updated.id) return p;
+              // Supabase Realtime truncates large payloads (>8KB), so base64
+              // images are stripped from payload.new. Preserve the existing
+              // image (and reviews) from local state so they never disappear.
+              return {
+                ...updated,
+                image: updated.image || p.image,
+                reviews: updated.reviews?.length ? updated.reviews : p.reviews,
+              };
+            });
           }
           if (payload.eventType === 'DELETE') {
             return prev.filter((p) => p.id !== (payload.old as any).id);
