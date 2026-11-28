@@ -958,6 +958,7 @@ export default function PropertyModal({
             {/* Hero Property Image */}
             <div className="relative rounded-2xl overflow-hidden aspect-video bg-stone-100 dark:bg-stone-800 mb-8 border border-stone-100 dark:border-stone-800 shadow-sm">
               <img
+                key={property.id}
                 src={property.image}
                 alt={property.title}
                 referrerPolicy="no-referrer"
